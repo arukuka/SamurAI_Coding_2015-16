@@ -185,7 +185,6 @@ class GameInfo {
 
     void occupy(int dir) pure @safe {
       this.field = this.field.map!(a => a.dup).array;
-      this.occupyCount = this.playerKill = this.selfCount = this.usurpCount = 0;
 
       immutable me = this.samuraiInfo[this.weapon];
       immutable int curX = me.curX;
