@@ -22,4 +22,8 @@ __dummy.html
 *.class
 jamurai/.idea
 tarou.jirou.saburou/out
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
 
