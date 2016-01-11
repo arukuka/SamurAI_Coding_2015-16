@@ -20,7 +20,7 @@ class GameInfo {
     int weapon;
     int width, height;
     int maxCure;
-    SamuraiInfo[] samuraiInfo;
+    SamuraiInfo[PLAYER_NUM] samuraiInfo;
     int turn, curePeriod;
     int[][] field;
 
@@ -54,21 +54,20 @@ class GameInfo {
       this.width   = res[3].to!int;
       this.height  = res[4].to!int;
       this.maxCure = res[5].to!int;
-      this.samuraiInfo = PLAYER_NUM.iota
-          .map!(i => SamuraiInfo())
-          .map!((s){
-            res = this.read();
-            s.homeX = res[0].to!int;
-            s.homeY = res[1].to!int;
-            return s;
-          })
-          .map!((s){
-            res = this.read();
-            s.rank = res[0].to!int;
-            s.score = res[1].to!int;
-            return s;
-          })
-          .array;
+
+      foreach(ref s; this.samuraiInfo) {
+        res = this.read();
+        debug{stderr.writeln(__LINE__, " : ", res);}
+        s.homeX = res[0].to!int;
+        s.homeY = res[1].to!int;
+      }
+      foreach (ref s; this.samuraiInfo) {
+        res = this.read();
+        debug{stderr.writeln(__LINE__, " : ", res);}
+        s.rank = res[0].to!int;
+        s.score = res[1].to!int;
+      }
+
       this.turn = 0;
       this.curePeriod = 0;
       this.field = new int[][](this.height, this.width);
@@ -111,7 +110,7 @@ class GameInfo {
       }
     }
 
-    bool isValid(int action) const pure @safe {
+    bool isValid(int action) const pure nothrow @safe {
       immutable me = this.samuraiInfo[this.weapon];
       int x = me.curX;
       int y = me.curY;
@@ -185,7 +184,7 @@ class GameInfo {
       }
     }
 
-    void occupy(int dir) pure @safe {
+    void occupy(int dir) pure nothrow @safe {
       this.field = this.field.map!(a => a.dup).array;
 
       immutable me = this.samuraiInfo[this.weapon];
@@ -208,18 +207,22 @@ class GameInfo {
         int nx = curX + pos.x;
         int ny = curY + pos.y;
         if (0<=nx && nx<width && 0<=ny && ny<height) {
-          bool isHome = this.samuraiInfo
-              .map!(s => s.homeX == nx && s.homeY == ny)
-              .reduce!((l, r) => l || r);
+          bool isHome = false;
+          foreach (s; this.samuraiInfo) {
+            isHome |= s.homeX == nx && s.homeY == ny;
+          }
           if (!isHome) {
             if (this.field[ny][nx] != this.weapon) {
               if (this.field[ny][nx] >= 3) {
                 if (this.field[ny][nx] < 6) {
                   ++usurpCount;
                 }
-                ++occupyCount;
+                if (this.field[ny][nx] >= 8) {
+                  ++occupyCount;
+                }
+              } else {
+                ++selfCount;
               }
-              ++selfCount;
               if (this.field[ny][nx] < 6) {
                 if (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
                     || this.paints[this.field[ny][nx]] >= this.paints[this.weapon]) {

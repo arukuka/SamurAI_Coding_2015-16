@@ -27,8 +27,8 @@ class PlayerTarou : Player {
         .setSafe(200)
         .setUsur(5)
         .setDepl(1)
-        .setMidd(3)
-        .setFght(7)
+        .setMidd(1)
+        .setFght(5)
         .build();
 
     static class HistoryTree {
