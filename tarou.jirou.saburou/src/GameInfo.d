@@ -40,6 +40,9 @@ class GameInfo {
       this.playerKill = info.playerKill;
       this.selfCount = info.selfCount;
       this.usurpCount = info.usurpCount;
+      this.fightCount = info.fightCount;
+
+      this.paints = info.paints;
     }
 
     this() {
@@ -74,6 +77,8 @@ class GameInfo {
       this.playerKill = 0;
       this.selfCount = 0;
       this.usurpCount = 0;
+
+      this.paints = [0, 0, 0, 0, 0, 0];
 
       0.writeln;
       stdout.flush;
@@ -129,9 +134,9 @@ class GameInfo {
           if (me.hidden == 1 && this.field[y][x] >= 3) {
             return false;
           }
-          if (!this.samuraiInfo.map!((s) {
-            if ( s == me ) {
-              return true;
+          foreach (i, s; this.samuraiInfo) {
+            if ( i == this.weapon ) {
+              continue;
             }
             if ( x == s.curX && y == s.curY ) {
               return false;
@@ -139,9 +144,6 @@ class GameInfo {
             if ( x == s.homeX && y == s.homeY ) {
               return false;
             }
-            return true;
-          }).reduce!((a, b) => a && b)) {
-            return false;
           }
           return true;
         }
@@ -218,6 +220,12 @@ class GameInfo {
                 ++occupyCount;
               }
               ++selfCount;
+              if (this.field[ny][nx] < 6) {
+                if (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
+                    || this.paints[this.field[ny][nx]] >= this.paints[this.weapon]) {
+                  ++fightCount;
+                }
+              }
               this.field[ny][nx] = this.weapon;
             }
             for (int j = 3; j < GameInfo.PLAYER_NUM; ++j) {
@@ -267,6 +275,7 @@ class GameInfo {
           + this.playerKill * m.kill
           + this.occupyCount * m.terr
           + this.usurpCount * m.usur
+          + this.fightCount * m.fght
           + this.isSafe() * m.safe
           + this.deployLevel() * m.depl
           + this.centerLevel() * m.midd;
@@ -321,11 +330,17 @@ class GameInfo {
       return maxd - dist;
     }
 
+    void setRivalInfo(int[6] paints) {
+      this.paints = paints;
+    }
+
   private:
     int occupyCount;
     int playerKill;
     int selfCount;
     int usurpCount;
+    int fightCount;
+    int[6] paints;
 
     string[] read() {
       string line = "";

@@ -15,6 +15,7 @@ class PlayerTarou : Player {
     enum COST = [0, 4, 4, 4, 4, 2, 2, 2, 2, 1, 1];
     enum MAX_POWER = 7;
 
+    int[][] latestField = null;
     int[][] fieldDup = null;
     SamuraiInfo[] samuraiDup = null;
 
@@ -27,6 +28,7 @@ class PlayerTarou : Player {
         .setUsur(5)
         .setDepl(1)
         .setMidd(3)
+        .setFght(7)
         .build();
 
     static class HistoryTree {
@@ -97,6 +99,32 @@ class PlayerTarou : Player {
       debug {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon);
       }
+
+      if (latestField is null) {
+        latestField = info.field.map!(a => a.dup).array;
+      } else {
+        for (int y = 0; y < info.height; ++y) {
+          for (int x = 0; x < info.width; ++x) {
+            if (info.field[y][x] == 9) {
+              continue;
+            }
+            latestField[y][x] = info.field[y][x];
+          }
+        }
+      }
+      int[6] paintCount;
+      for (int i = 0; i < 6; ++i) {
+        paintCount[i] = 0;
+      }
+      for (int y = 0; y < info.height; ++y) {
+        for (int x = 0; x < info.width; ++x) {
+          int v = latestField[y][x];
+          if (0 <= v && v < 6) {
+            ++paintCount[v];
+          }
+        }
+      }
+      info.setRivalInfo(paintCount);
 
       if (fieldDup !is null && samuraiDup !is null) {
         enum ox = [
