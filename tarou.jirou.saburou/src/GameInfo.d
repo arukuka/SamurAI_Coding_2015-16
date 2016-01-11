@@ -24,7 +24,7 @@ class GameInfo {
     int turn, curePeriod;
     int[][] field;
 
-    this(GameInfo info) {
+    this(const GameInfo info) {
       this.turns = info.turns;
       this.side = info.side;
       this.weapon = info.weapon;
@@ -34,7 +34,7 @@ class GameInfo {
       this.samuraiInfo = info.samuraiInfo.dup;
       this.turn = info.turn;
       this.curePeriod = info.curePeriod;
-      this.field = info.field;
+      this.field = info.field.map!(a => a.dup).array;
 
       this.occupyCount = info.occupyCount;
       this.playerKill = info.playerKill;
@@ -91,19 +91,19 @@ class GameInfo {
       res = this.read();
       this.curePeriod = res[0].to!int;
 
-      this.samuraiInfo.each!((ref s) {
+      foreach (ref s; this.samuraiInfo)  {
         res = this.read();
         s.curX = res[0].to!int;
         s.curY = res[1].to!int;
         s.hidden = res[2].to!int;
-      });
+      }
 
-      this.height.iota.each!((i) {
+      for (int i = 0; i < this.height; ++i) {
         res = this.read();
-        this.width.iota.each!((j) {
+        for (int j = 0; j < this.width; ++j) {
           this.field[i][j] = res[j].to!int;
-        });
-      });
+        }
+      }
     }
 
     bool isValid(int action) const pure @safe {
@@ -158,13 +158,10 @@ class GameInfo {
           if (me.hidden != 1) {
             return false;
           }
-          if (!this.samuraiInfo.map!((s) {
-                  if (s.hidden != -1 && s.curX == x && s.curY == y) {
-                    return false;
-                  }
-                  return true;
-              }).reduce!((a, b) => a && b)) {
-            return false;
+          foreach (s; this.samuraiInfo) {
+            if (s.hidden != 1 && s.curX == x && s.curY == y) {
+              return false;
+            }
           }
           return true;
         }
@@ -205,7 +202,7 @@ class GameInfo {
         [1, 2, 0, 1, 0],
         [0, -1, 1, 1, 1, -1, 0]
       ];
-      size[this.weapon].iota.each!((i) {
+      for (int i = 0; i < size[this.weapon]; ++i) {
         auto pos = GameInfo.rotate(dir, ox[this.weapon][i], oy[this.weapon][i]);
         int nx = curX + pos.x;
         int ny = curY + pos.y;
@@ -236,7 +233,7 @@ class GameInfo {
             }
           }
         }
-      });
+      }
     }
 
     void doAction(int action) pure @safe {

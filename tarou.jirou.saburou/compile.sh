@@ -1,1 +1,1 @@
-dmd src/*.d -ofout/main -O -release -inline -boundscheck=off
+gdc -W -Wall src/*.d -o out/main -g
