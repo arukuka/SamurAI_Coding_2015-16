@@ -94,7 +94,9 @@ class PlayerTarou : Player {
     }
     override void play(const GameInfo info_) {
       GameInfo info = new GameInfo(info_);
-      stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon);
+      debug {
+        stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon);
+      }
 
       if (fieldDup !is null && samuraiDup !is null) {
         enum ox = [
@@ -127,7 +129,7 @@ class PlayerTarou : Player {
         for (int i = 3; i < 6; ++i) {
           auto si = info.samuraiInfo[i];
           if (si.curX == -1 && si.curY == -1) {
-            stderr.writeln("search ", i);
+            debug {stderr.writeln("search ", i);}
             bool[Point] set;
             for (int y = 0; y < info.height; ++y) {
               for (int x = 0; x < info.width; ++x) {
@@ -168,14 +170,16 @@ class PlayerTarou : Player {
                 }
               }
             }
-            foreach (k; set.byKey) {
-              stderr.writeln("\t? : ", k);
+            debug {
+              foreach (k; set.byKey) {
+                stderr.writeln("\t? : ", k);
+              }
             }
             if (set.length == 1) {
               Point p = set.byKey().front;
               int x = p.x;
               int y = p.y;
-              stderr.writeln("\t\tgot it! : ", p);
+              debug {stderr.writeln("\t\tgot it! : ", p);}
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
@@ -197,8 +201,10 @@ class PlayerTarou : Player {
         accum += v;
         roulette[i++] = accum;
       }
-      if (accum == double.infinity) {
-        stderr.writeln("accum goes infinite!");
+      debug {
+        if (accum == double.infinity) {
+          stderr.writeln("accum goes infinite!");
+        }
       }
       auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
       GameInfo best = histories[idx].getInfo();
