@@ -184,7 +184,7 @@ class GameInfo {
       }
     }
 
-    void occupy(int dir) pure nothrow @safe {
+    void occupy(int dir) pure @safe {
       this.field = this.field.map!(a => a.dup).array;
 
       immutable me = this.samuraiInfo[this.weapon];
@@ -272,7 +272,7 @@ class GameInfo {
       this.samuraiInfo[this.weapon] = me;
     }
 
-    double score(immutable Merits m) const pure nothrow @safe @nogc {
+    double score(const Merits m) const pure nothrow @safe {
       return this.samuraiInfo[this.weapon].hidden * m.hide
           + this.selfCount * m.self
           + this.playerKill * m.kill
@@ -284,7 +284,7 @@ class GameInfo {
           + this.centerLevel() * m.midd;
     }
 
-    bool isSafe() const pure nothrow @safe @nogc {
+    bool isSafe() const pure nothrow @safe {
       bool flag = true;
       SamuraiInfo me = this.samuraiInfo[this.weapon];
       // 3
@@ -316,7 +316,7 @@ class GameInfo {
       }
       return flag;
     }
-    double deployLevel() const pure nothrow @safe @nogc {
+    double deployLevel() const pure nothrow @safe {
       SamuraiInfo me = this.samuraiInfo[this.weapon];
       double res = 1 << 28;
       for (int i = 0; i < 3; ++i) {
@@ -326,7 +326,7 @@ class GameInfo {
       }
       return res;
     }
-    double centerLevel() const pure nothrow @safe @nogc {
+    double centerLevel() const pure nothrow @safe {
       SamuraiInfo me = this.samuraiInfo[this.weapon];
       double dist = Math.abs(me.curX - this.width / 2) + Math.abs(me.curY - this.height / 2);
       double maxd = this.width / 2 + this.height / 2;

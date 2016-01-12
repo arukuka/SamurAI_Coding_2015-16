@@ -36,7 +36,6 @@ immutable class Merits {
           return new Merits(this);
         }
 
-      @nogc:
         MeritsBuilder setMidd(double midd) {
           this.midd = midd;
           return this;

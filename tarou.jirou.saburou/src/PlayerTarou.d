@@ -19,7 +19,7 @@ class PlayerTarou : Player {
     int[][] fieldDup = null;
     SamuraiInfo[] samuraiDup = null;
 
-    static immutable Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
+    static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(10)
         .setSelf(3)
         .setKill(100)
