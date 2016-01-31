@@ -50,9 +50,9 @@ class PlayerTarou : Player {
         HistoryTree parent;
         int action;
 
-        SList!int getActions(SList!int actions) @safe const pure nothrow {
+        int[] getActions(int[] actions) @safe const pure nothrow {
           if (parent !is null) {
-            actions.insert(action);
+            actions = action ~ actions;
             return parent.getActions(actions);
           } else {
             return actions;
@@ -69,8 +69,8 @@ class PlayerTarou : Player {
 
         void add(HistoryTree c) { children ~= c; }
 
-        SList!int getActions() @safe const pure nothrow {
-          return getActions(SList!int());
+        int[] getActions() @safe const pure nothrow {
+          return getActions([]);
         }
 
         HistoryTree[] collect() {
@@ -102,11 +102,11 @@ class PlayerTarou : Player {
       HistoryTree tree;
 
       string toString() @safe const pure {
-        return format("{%d, %b, %b, [%(%d %)]}", cost, attack, tree.getActions()[]);
+        return format("{%d, %b, %b, [%(%d %)]}", cost, attack, tree.getActions());
       }
 
       bool opEquals(ref const typeof(this) r) const @safe pure nothrow {
-        return tree.getActions()[] == r.tree.getActions()[];
+        return tree.getActions() == r.tree.getActions();
       }
     }
 
@@ -121,7 +121,7 @@ class PlayerTarou : Player {
       queue.insert(atom);
       debug {
         stderr.writeln("-- plan2 --");
-        stderr.writeln = root.getActions()[];
+        stderr.writeln = root.getActions();
       }
       // attack, hidden, height, width : power
       int[5][2][20][20] done;
@@ -140,7 +140,7 @@ class PlayerTarou : Player {
         Node node = queue.front();
         queue.removeFront();
         debug {
-          stderr.writeln("\t", node.cost, node.tree.getActions()[]);
+          stderr.writeln("\t", node.cost, node.tree.getActions());
         }
 
         for (int i = 1; i < COST.length; ++i) {
@@ -314,7 +314,7 @@ class PlayerTarou : Player {
       double accum = 0.0;
       int i = 0;
       //next UNCO-de
-      foreach (next; histories[]) {
+      foreach (next; histories) {
         HistoryTree next_root = new HistoryTree(null, next.info, 0);
         plan2(next_root);
         auto next_histories = next_root.collect();
@@ -322,7 +322,7 @@ class PlayerTarou : Player {
         double[] next_roulette = new double[next_histories.length];
         double next_accum = 0.0;
         int j = 0;
-        foreach (hist; next_histories[]) {
+        foreach (hist; next_histories) {
           double v = Math.exp(hist.getInfo().score(NEXT_MERITS));
           next_accum += v;
           next_roulette[j++] = next_accum;
@@ -343,7 +343,7 @@ class PlayerTarou : Player {
       auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
-      bestActions[].map!(a => a.to!string).reduce!((l, r) => l ~ " " ~ r).writeln;
+      bestActions.map!(a => a.to!string).reduce!((l, r) => l ~ " " ~ r).writeln;
       stdout.flush;
 
       fieldDup = best.field.map!(a => a.dup).array;
