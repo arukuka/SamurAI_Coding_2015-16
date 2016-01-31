@@ -9,6 +9,7 @@ import std.range;
 import std.array;
 import std.conv;
 import std.typecons;
+import std.format;
 
 class PlayerTarou : Player {
   private:
@@ -30,16 +31,26 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setFght(5)
         .build();
+    static const Merits NEXT_MERITS = new Merits.MeritsBuilder()
+        .setTerr(10)
+        .setSelf(3)
+        .setKill(0)
+        .setHide(0)
+        .setSafe(0)
+        .setUsur(5)
+        .setDepl(1)
+        .setMidd(1)
+        .setFght(5)
+        .build();
 
     static class HistoryTree {
       private:
-        const GameInfo info;
-//        SList!HistoryTree children;
+        GameInfo info;
         HistoryTree[] children;
         HistoryTree parent;
         int action;
 
-        SList!int getActions(SList!int actions) {
+        SList!int getActions(SList!int actions) @safe const pure nothrow {
           if (parent !is null) {
             actions.insert(action);
             return parent.getActions(actions);
@@ -49,34 +60,31 @@ class PlayerTarou : Player {
         }
 
       public:
-        this(HistoryTree parent, const GameInfo info, int action) {
+        this(HistoryTree parent, GameInfo info, int action) {
           this.parent = parent;
           this.info = info;
           this.action = action;
         }
-        GameInfo getInfo() const { return new GameInfo(info); }
+        GameInfo getInfo() { return info; }
 
         void add(HistoryTree c) { children ~= c; }
 
-        double score() const { return info.score(DEFAULT_MERITS); }
-
-        SList!int getActions() {
+        SList!int getActions() @safe const pure nothrow {
           return getActions(SList!int());
         }
 
-       HistoryTree[] collect() {
+        HistoryTree[] collect() {
           HistoryTree[] list;
-          if (children.length != 0) {
-            list ~= children.map!(c => c.collect()).reduce!((l, r) {
-              l ~= r;
-              return l;
-            });
+          if (children.length > 0) {
+            foreach (c; children) {
+              list ~= c.collect();
+            }
           }
           list ~= this;
           return list;
         }
-
     }
+
     void plan(HistoryTree tree, immutable int power) {
       for (int i = 1; i < COST.length; ++i) {
         if (COST[i] <= power && tree.getInfo().isValid(i)) {
@@ -88,14 +96,95 @@ class PlayerTarou : Player {
         }
       }
     }
+    struct Node {
+      int cost;
+      int attack;
+      HistoryTree tree;
+
+      string toString() @safe const pure {
+        return format("{%d, %b, %b, [%(%d %)]}", cost, attack, tree.getActions()[]);
+      }
+
+      bool opEquals(ref const typeof(this) r) const @safe pure nothrow {
+        return tree.getActions()[] == r.tree.getActions()[];
+      }
+    }
+
+    void plan2(HistoryTree root)
+    {
+      auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
+      Node atom = {
+        MAX_POWER,
+        0,
+        root
+      };
+      queue.insert(atom);
+      debug {
+        stderr.writeln("-- plan2 --");
+        stderr.writeln = root.getActions()[];
+      }
+      // attack, hidden, height, width : power
+      int[5][2][20][20] done;
+      for (int x = 0; x < 20; ++x) {
+        for (int y = 0; y < 20; ++y) {
+          for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 5; ++j) {
+              done[x][y][i][j] = -1;
+            }
+          }
+        }
+      }
+      auto me = root.info.samuraiInfo[root.info.weapon];
+      done[me.curX][me.curY][me.hidden][0] = MAX_POWER;
+      while (queue.length) {
+        Node node = queue.front();
+        queue.removeFront();
+        debug {
+          stderr.writeln("\t", node.cost, node.tree.getActions()[]);
+        }
+
+        for (int i = 1; i < COST.length; ++i) {
+          if (COST[i] <= node.cost && node.tree.getInfo().isValid(i)) {
+            GameInfo next = new GameInfo(node.tree.getInfo());
+            next.doAction(i);
+            auto nme = next.samuraiInfo[next.weapon];
+            if (node.cost - COST[i]
+                <= done[nme.curX][nme.curY]
+                    [nme.hidden]
+                    [node.attack | ((1 <= i && i <= 4) ? i : 0)]
+                ) {
+              continue;
+            }
+
+            debug {
+              stderr.writeln("\t\t", i, " -> ", node.cost - COST[i]);
+            }
+
+            done[nme.curX][nme.curY]
+                    [nme.hidden]
+                    [node.attack | ((1 <= i && i <= 4) ? i : 0)]
+                = node.cost - COST[i];
+
+            HistoryTree child = new HistoryTree(node.tree, next, i);
+            node.tree.add(child);
+            Node nnode = {
+              node.cost - COST[i],
+              node.attack | ((1 <= i && i <= 4) ? i : 0),
+              child
+            };
+
+            queue.insert(nnode);
+          }
+        }
+      }
+    }
 
   public:
     void setDup(in GameInfo info) {
       fieldDup = info.field.map!(a => a.dup).array;
       samuraiDup = info.samuraiInfo.dup;
     }
-    override void play(const GameInfo info_) {
-      GameInfo info = new GameInfo(info_);
+    override void play(GameInfo info) {
       debug {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon);
       }
@@ -157,7 +246,7 @@ class PlayerTarou : Player {
         for (int i = 3; i < 6; ++i) {
           auto si = info.samuraiInfo[i];
           if (si.curX == -1 && si.curY == -1) {
-            debug {stderr.writeln("search ", i);}
+            debug(2) {stderr.writeln("search ", i);}
             bool[Point] set;
             for (int y = 0; y < info.height; ++y) {
               for (int x = 0; x < info.width; ++x) {
@@ -198,7 +287,7 @@ class PlayerTarou : Player {
                 }
               }
             }
-            debug {
+            debug(2) {
               foreach (k; set.byKey) {
                 stderr.writeln("\t? : ", k);
               }
@@ -207,7 +296,7 @@ class PlayerTarou : Player {
               Point p = set.byKey().front;
               int x = p.x;
               int y = p.y;
-              debug {stderr.writeln("\t\tgot it! : ", p);}
+              debug(2) {stderr.writeln("\t\tgot it! : ", p);}
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
@@ -217,15 +306,32 @@ class PlayerTarou : Player {
       }
 
       HistoryTree root = new HistoryTree(null, info, 0);
-      plan(root, MAX_POWER);
+      plan2(root);
 
       auto histories = root.collect();
 
       double[] roulette = new double[histories.length];
       double accum = 0.0;
       int i = 0;
-      foreach (hist; histories[]) {
-        double v = Math.exp(hist.getInfo().score(DEFAULT_MERITS));
+      //next UNCO-de
+      foreach (next; histories[]) {
+        HistoryTree next_root = new HistoryTree(null, next.info, 0);
+        plan2(next_root);
+        auto next_histories = next_root.collect();
+
+        double[] next_roulette = new double[next_histories.length];
+        double next_accum = 0.0;
+        int j = 0;
+        foreach (hist; next_histories[]) {
+          double v = Math.exp(hist.getInfo().score(NEXT_MERITS));
+          next_accum += v;
+          next_roulette[j++] = next_accum;
+        }
+        auto idx = next_roulette.length
+                    - next_roulette.assumeSorted.upperBound(uniform(0.0, next_accum)).length;
+
+        double v = Math.exp(next.getInfo().score(DEFAULT_MERITS)
+                    + next_histories[idx].getInfo().score(NEXT_MERITS));
         accum += v;
         roulette[i++] = accum;
       }

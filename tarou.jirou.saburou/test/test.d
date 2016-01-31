@@ -1,6 +1,7 @@
 import std.stdio;
 import std.range;
 import std.algorithm;
+import std.container;
 
 void main()
 {
@@ -21,5 +22,11 @@ void main()
   f.writeln;  // modified
   h[0][0] = 0;
   f.writeln;  // unmodified
+
+  auto rbt4 = redBlackTree!"a > b"(0, 1, 5, 7);
+  while (rbt4.length) {
+    rbt4.front.writeln;
+    rbt4.removeFront;
+  }
 }
 

@@ -24,7 +24,7 @@ class GameInfo {
     int turn, curePeriod;
     int[][] field;
 
-    this(const GameInfo info) {
+    this(GameInfo info) {
       this.turns = info.turns;
       this.side = info.side;
       this.weapon = info.weapon;
@@ -34,7 +34,8 @@ class GameInfo {
       this.samuraiInfo = info.samuraiInfo.dup;
       this.turn = info.turn;
       this.curePeriod = info.curePeriod;
-      this.field = info.field.map!(a => a.dup).array;
+//      this.field = info.field.map!(a => a.dup).array;
+      this.field = info.field;
 
       this.occupyCount = info.occupyCount;
       this.playerKill = info.playerKill;
@@ -57,13 +58,11 @@ class GameInfo {
 
       foreach(ref s; this.samuraiInfo) {
         res = this.read();
-        debug{stderr.writeln(__LINE__, " : ", res);}
         s.homeX = res[0].to!int;
         s.homeY = res[1].to!int;
       }
       foreach (ref s; this.samuraiInfo) {
         res = this.read();
-        debug{stderr.writeln(__LINE__, " : ", res);}
         s.rank = res[0].to!int;
         s.score = res[1].to!int;
       }
@@ -187,6 +186,12 @@ class GameInfo {
     void occupy(int dir) pure @safe {
       this.field = this.field.map!(a => a.dup).array;
 
+      occupyCount = 0;
+      playerKill = 0;
+      selfCount = 0;
+      usurpCount = 0;
+      fightCount = 0;
+
       immutable me = this.samuraiInfo[this.weapon];
       immutable int curX = me.curX;
       immutable int curY = me.curY;
@@ -224,8 +229,18 @@ class GameInfo {
                 ++selfCount;
               }
               if (this.field[ny][nx] < 6) {
-                if (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
-                    || this.paints[this.field[ny][nx]] >= this.paints[this.weapon]) {
+                int[2] scores;
+                for (int s = 0; s < 2; ++s) {
+                  for (int j = 0; j < 3; ++j) {
+                    scores[s] += this.paints[j + s * 3];
+                  }
+                }
+                int rem = this.width * this.height - (scores[0] + scores[1]);
+                scores[1] += (rem * 2) / 3;
+                if (scores[0] > scores[1]
+                    && (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
+                      || this.paints[this.field[ny][nx]] >= this.paints[this.weapon])
+                    ) {
                   ++fightCount;
                 }
               }
