@@ -1,1 +1,1 @@
-gdc src/*.d -o out/main -g -fdebug
+gdc src/*.d -o main -g -fdebug

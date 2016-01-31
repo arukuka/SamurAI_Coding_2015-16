@@ -945,9 +945,18 @@ final class RedBlackTree(T, alias less = "a < b", bool allowDuplicates = false)
      *
      * Complexity: $(BIGOH n)
      */
+    deprecated {
     @property RedBlackTree dup()
     {
-        return new RedBlackTree(_end.dup(), _length);
+        /+
+        auto res = new RedBlackTree(
+          _end.dup(),
+          _length
+        );
+        return res;
+        +/
+        return null;
+    }
     }
 
     static if(doUnittest) unittest
@@ -1684,11 +1693,13 @@ assert(equal(rbt[], [5]));
      * Constructor. Pass in an array of elements, or individual elements to
      * initialize the tree with.
      */
+    /+
     this(Elem[] elems...)
     {
         _setup();
         stableInsert(elems);
     }
+     +/
 
     /**
      * Constructor. Pass in a range of elements to initialize the tree with.
@@ -1804,6 +1815,13 @@ auto redBlackTree(alias less, bool allowDuplicates, E)(E[] elems...)
     //dmd can't handle it if we don't (even though the template which
     //takes less but not allowDuplicates works just fine).
     return new RedBlackTree!(E, binaryFun!less, allowDuplicates)(elems);
+}
+
+/++ Ditto +/
+auto redBlackTree(alias less, bool allowDuplicates, E)()
+    if(is(typeof(binaryFun!less(E.init, E.init))))
+{
+    return new RedBlackTree!(E, binaryFun!less, allowDuplicates)();
 }
 
 ///

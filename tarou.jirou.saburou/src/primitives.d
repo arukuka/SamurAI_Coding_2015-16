@@ -336,13 +336,6 @@ void put(R, E)(ref R r, E e)
     }
 }
 
-@safe pure nothrow @nogc unittest
-{
-    static struct R() { void put(in char[]) {} }
-    R!() r;
-    put(r, 'a');
-}
-
 //Helper function to handle chars as quickly and as elegantly as possible
 //Assumes r.put(e)/r(e) has already been tested
 private void putChar(R, E)(ref R r, E e)
@@ -573,23 +566,6 @@ unittest
             }();
         }
     }
-}
-
-unittest
-{
-    static struct CharRange
-    {
-        char c;
-        enum empty = false;
-        void popFront(){};
-        ref char front() return @property
-        {
-            return c;
-        }
-    }
-    CharRange c;
-    put(c, cast(dchar)'H');
-    put(c, "hello"d);
 }
 
 unittest
@@ -1919,25 +1895,6 @@ ElementType!R moveBack(R)(R r)
     }
 }
 
-///
-@safe unittest
-{
-    struct TestRange
-    {
-        int payload = 5;
-        @property bool empty() { return false; }
-        @property TestRange save() { return this; }
-        @property ref int front() return { return payload; }
-        @property ref int back() return { return payload; }
-        void popFront() { }
-        void popBack() { }
-    }
-    static assert(isBidirectionalRange!TestRange);
-    TestRange r;
-    auto x = moveBack(r);
-    assert(x == 5);
-}
-
 /**
    Moves element at index $(D i) of $(D r) out and returns it. Leaves $(D
    r.front) in a destroyable state that does not allocate any resources
@@ -1986,25 +1943,6 @@ ElementType!R moveAt(R, I)(R r, I i) if (isIntegral!I)
     }
 }
 
-/**
-Implements the range interface primitive $(D empty) for built-in
-arrays. Due to the fact that nonmember functions can be called with
-the first argument using the dot notation, $(D array.empty) is
-equivalent to $(D empty(array)).
- */
-
-@property bool empty(T)(in T[] a) @safe pure nothrow @nogc
-{
-    return !a.length;
-}
-
-///
-@safe pure nothrow unittest
-{
-    auto a = [ 1, 2, 3 ];
-    assert(!a.empty);
-    assert(a[3 .. $].empty);
-}
 
 /**
 Implements the range interface primitive $(D save) for built-in
@@ -2014,7 +1952,7 @@ equivalent to $(D save(array)). The function does not duplicate the
 content of the array, it simply returns its argument.
  */
 
-@property T[] save(T)(T[] a) @safe pure nothrow @nogc
+@property T[] save(T)(T[] a) @safe pure nothrow
 {
     return a;
 }
@@ -2036,7 +1974,7 @@ $(D popFront) automatically advances to the next $(GLOSSARY code
 point).
 */
 
-void popFront(T)(ref T[] a) @safe pure nothrow @nogc
+void popFront(T)(ref T[] a) @safe pure nothrow
 if (!isNarrowString!(T[]) && !is(T[] == void[]))
 {
     assert(a.length, "Attempting to popFront() past the end of an array of " ~ T.stringof);
@@ -2135,7 +2073,7 @@ equivalent to $(D popBack(array)). For $(GLOSSARY narrow strings), $(D
 popFront) automatically eliminates the last $(GLOSSARY code point).
 */
 
-void popBack(T)(ref T[] a) @safe pure nothrow @nogc
+void popBack(T)(ref T[] a) @safe pure nothrow
 if (!isNarrowString!(T[]) && !is(T[] == void[]))
 {
     assert(a.length);
@@ -2201,7 +2139,7 @@ equivalent to $(D front(array)). For $(GLOSSARY narrow strings), $(D
 front) automatically returns the first $(GLOSSARY code point) as a $(D
 dchar).
 */
-@property ref T front(T)(T[] a) @safe pure nothrow @nogc
+@property ref T front(T)(T[] a) @safe pure nothrow
 if (!isNarrowString!(T[]) && !is(T[] == void[]))
 {
     assert(a.length, "Attempting to fetch the front of an empty array of " ~ T.stringof);
@@ -2245,7 +2183,7 @@ equivalent to $(D back(array)). For $(GLOSSARY narrow strings), $(D
 back) automatically returns the last $(GLOSSARY code point) as a $(D
 dchar).
 */
-@property ref T back(T)(T[] a) @safe pure nothrow @nogc
+@property ref T back(T)(T[] a) @safe pure nothrow
 if (!isNarrowString!(T[]))
 {
     assert(a.length, "Attempting to fetch the back of an empty array of " ~ T.stringof);
