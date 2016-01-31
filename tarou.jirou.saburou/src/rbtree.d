@@ -17,12 +17,12 @@ boost.org/LICENSE_1_0.txt)).
 
 Authors: Steven Schveighoffer, $(WEB erdani.com, Andrei Alexandrescu)
 */
-module samurai.rbtree;
+module samurai.container.rbtree;
 
 import std.functional : binaryFun;
 import std.format;
 
-public import std.container.util;
+public import samurai.container.util;
 
 version(unittest) debug = RBDoChecks;
 
