@@ -108,6 +108,15 @@ class PlayerTarou : Player {
       bool opEquals(ref const typeof(this) r) const @safe pure nothrow {
         return tree.getActions() == r.tree.getActions();
       }
+
+      Node dup() @safe pure nothrow {
+        Node res = {
+          cost,
+          attack,
+          tree
+        };
+        return res;
+      }
     }
 
     void plan2(HistoryTree root)
