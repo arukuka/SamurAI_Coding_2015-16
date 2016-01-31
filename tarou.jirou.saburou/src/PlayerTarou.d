@@ -3,7 +3,6 @@ import samurai;
 
 import std.stdio;
 import std.random;
-import std.container;
 import std.algorithm;
 import std.range;
 import std.array;
@@ -109,6 +108,7 @@ class PlayerTarou : Player {
         return tree.getActions() == r.tree.getActions();
       }
 
+      /+
       Node dup() @safe pure nothrow {
         Node res = {
           cost,
@@ -117,6 +117,7 @@ class PlayerTarou : Player {
         };
         return res;
       }
+      +/
     }
 
     void plan2(HistoryTree root)
