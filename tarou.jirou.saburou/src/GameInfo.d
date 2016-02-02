@@ -44,6 +44,8 @@ class GameInfo {
       this.fightCount = info.fightCount;
 
       this.paints = info.paints;
+
+      this.probPlaces = info.probPlaces;
     }
 
     this() {
@@ -331,6 +333,33 @@ class GameInfo {
       }
       return flag;
     }
+    bool isSafe(immutable int idx, immutable Point p) const pure nothrow @safe {
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
+      immutable int dx = Math.abs(p.x - me.curX);
+      immutable int dy = Math.abs(p.y - me.curY);
+      final switch (idx) {
+        case 3:
+          return (dx + dy > 5 || min(dx, dy) >= 2);
+        case 4:
+          return dx + dy > 3;
+        case 5:
+          return dx + dy > 3 || max(dx, dy) > 2;
+      }
+    }
+    double safeLevel() const pure nothrow @safe {
+      double safe = 1.0;
+      for (int i = 3; i < 6; ++i) {
+        SamuraiInfo si = this.samuraiInfo[i];
+        immutable Point p = Point(si.curX, si.curY);
+        if (p.x != -1 && p.y != -1) {
+          safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
+        } else {
+          // TODO: use probPlaces
+        }
+      }
+      return safe;
+    }
+
     double deployLevel() const pure nothrow @safe {
       SamuraiInfo me = this.samuraiInfo[this.weapon];
       double res = 1 << 28;
@@ -348,8 +377,15 @@ class GameInfo {
       return maxd - dist;
     }
 
-    void setRivalInfo(int[6] paints) {
+    void setRivalInfo(int[6] paints) pure nothrow @safe {
       this.paints = paints;
+    }
+
+    void setProbPlaces(int idx, bool[Point] set) pure nothrow {
+      this.probPlaces[idx] = [];
+      foreach (p; set.byKey) {
+        this.probPlaces[idx] ~= p;
+      }
     }
 
   private:
@@ -359,6 +395,7 @@ class GameInfo {
     int usurpCount;
     int fightCount;
     int[6] paints;
+    Point[][6] probPlaces;
 
     string[] read() {
       string line = "";

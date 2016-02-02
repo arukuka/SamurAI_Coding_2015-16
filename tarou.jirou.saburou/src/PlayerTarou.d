@@ -308,6 +308,8 @@ class PlayerTarou : Player {
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
+            } else {
+              info.setProbPlaces(i, set);
             }
           }
         }
