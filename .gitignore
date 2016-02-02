@@ -26,4 +26,8 @@ tarou.jirou.saburou/out
 *.tar
 *.tar.gz
 *.tar.bz2
+<<<<<<< Updated upstream
+=======
+main*
+>>>>>>> Stashed changes
 
