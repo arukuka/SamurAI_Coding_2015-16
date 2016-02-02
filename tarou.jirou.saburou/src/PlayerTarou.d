@@ -59,20 +59,20 @@ class PlayerTarou : Player {
         }
 
       public:
-        this(HistoryTree parent, GameInfo info, int action) {
+        this(HistoryTree parent, GameInfo info, int action) @safe pure {
           this.parent = parent;
           this.info = info;
           this.action = action;
         }
-        GameInfo getInfo() { return info; }
+        GameInfo getInfo() @safe pure nothrow { return info; }
 
-        void add(HistoryTree c) { children ~= c; }
+        void add(HistoryTree c) @safe pure nothrow { children ~= c; }
 
         int[] getActions() @safe const pure nothrow {
           return getActions([]);
         }
 
-        HistoryTree[] collect() {
+        HistoryTree[] collect() @safe pure nothrow {
           HistoryTree[] list;
           if (children.length > 0) {
             foreach (c; children) {
@@ -84,6 +84,7 @@ class PlayerTarou : Player {
         }
     }
 
+    deprecated
     void plan(HistoryTree tree, immutable int power) {
       for (int i = 1; i < COST.length; ++i) {
         if (COST[i] <= power && tree.getInfo().isValid(i)) {
@@ -118,7 +119,7 @@ class PlayerTarou : Player {
       }
     }
 
-    void plan2(HistoryTree root)
+    void plan2(HistoryTree root) pure
     {
       auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
       Node atom = {

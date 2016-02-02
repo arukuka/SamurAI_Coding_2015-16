@@ -24,7 +24,7 @@ class GameInfo {
     int turn, curePeriod;
     int[][] field;
 
-    this(GameInfo info) {
+    this(GameInfo info) @safe pure {
       this.turns = info.turns;
       this.side = info.side;
       this.weapon = info.weapon;
@@ -296,11 +296,12 @@ class GameInfo {
           + this.occupyCount * m.terr
           + this.usurpCount * m.usur
           + this.fightCount * m.fght
-          + this.isSafe() * m.safe
+          + this.safeLevel() * m.safe
           + this.deployLevel() * m.depl
           + this.centerLevel() * m.midd;
     }
 
+    deprecated
     bool isSafe() const pure nothrow @safe {
       bool flag = true;
       SamuraiInfo me = this.samuraiInfo[this.weapon];
@@ -354,7 +355,23 @@ class GameInfo {
         if (p.x != -1 && p.y != -1) {
           safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
         } else {
-          // TODO: use probPlaces
+          immutable Point rh = Point(si.homeX, si.homeY);
+          int sum = probPlaces[i].length;
+          int cnt = 0;
+          if (probPlaces[i].find(rh).empty) {
+            ++sum;
+            if (isSafe(i, rh)) {
+              ++cnt;
+            }
+          }
+          assert (sum > 0);
+          foreach (q; probPlaces[i]) {
+            if (isSafe(i, q)) {
+              ++cnt;
+            }
+          }
+          assert (cnt <= sum);
+          safe = min(safe, Math.pow((cast(double)cnt / sum), 2));
         }
       }
       return safe;
