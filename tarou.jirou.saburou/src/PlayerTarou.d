@@ -312,6 +312,7 @@ class PlayerTarou : Player {
               info.samuraiInfo[i] = si;
             } else if (set.length == 0) {
               info.setProbPlaces(i, probPointDup[i]);
+              probPointDup[i] = probPointDup[i].init;
             } else {
               info.setProbPlaces(i, set);
               probPointDup[i] = set;
