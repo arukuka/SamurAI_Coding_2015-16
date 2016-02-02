@@ -18,6 +18,7 @@ class PlayerTarou : Player {
     int[][] latestField = null;
     int[][] fieldDup = null;
     SamuraiInfo[] samuraiDup = null;
+    bool[Point][6] probPointDup;
 
     static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(10)
@@ -309,8 +310,11 @@ class PlayerTarou : Player {
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
+            } else if (set.length == 0) {
+              info.setProbPlaces(i, probPointDup[i]);
             } else {
               info.setProbPlaces(i, set);
+              probPointDup[i] = set;
             }
           }
         }
@@ -354,7 +358,7 @@ class PlayerTarou : Player {
       auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
-      bestActions.map!(a => a.to!string).reduce!((l, r) => l ~ " " ~ r).writeln;
+      "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       stdout.flush;
 
       fieldDup = best.field.map!(a => a.dup).array;
