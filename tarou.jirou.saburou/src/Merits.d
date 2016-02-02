@@ -14,6 +14,7 @@ immutable class Merits {
     immutable double usur;
     immutable double depl;
     immutable double midd;
+    immutable double fght;
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -25,6 +26,7 @@ immutable class Merits {
         double usur = 1;
         double depl = 1;
         double midd = 1;
+        double fght = 1;
 
       public:
       pure:
@@ -34,7 +36,6 @@ immutable class Merits {
           return new Merits(this);
         }
 
-      @nogc:
         MeritsBuilder setMidd(double midd) {
           this.midd = midd;
           return this;
@@ -67,6 +68,10 @@ immutable class Merits {
           this.safe = safe;
           return this;
         }
+        MeritsBuilder setFght(double fght) {
+          this.fght = fght;
+          return this;
+        }
     }
 
   private:
@@ -79,6 +84,7 @@ immutable class Merits {
       this.usur = mb.usur;
       this.depl = mb.depl;
       this.midd = mb.midd;
+      this.fght = mb.fght;
     }
 }
 

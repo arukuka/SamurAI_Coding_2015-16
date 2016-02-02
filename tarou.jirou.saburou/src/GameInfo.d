@@ -20,11 +20,11 @@ class GameInfo {
     int weapon;
     int width, height;
     int maxCure;
-    SamuraiInfo[] samuraiInfo;
+    SamuraiInfo[PLAYER_NUM] samuraiInfo;
     int turn, curePeriod;
     int[][] field;
 
-    this(const GameInfo info) {
+    this(GameInfo info) @safe pure {
       this.turns = info.turns;
       this.side = info.side;
       this.weapon = info.weapon;
@@ -34,12 +34,18 @@ class GameInfo {
       this.samuraiInfo = info.samuraiInfo.dup;
       this.turn = info.turn;
       this.curePeriod = info.curePeriod;
-      this.field = info.field.map!(a => a.dup).array;
+//      this.field = info.field.map!(a => a.dup).array;
+      this.field = info.field;
 
       this.occupyCount = info.occupyCount;
       this.playerKill = info.playerKill;
       this.selfCount = info.selfCount;
       this.usurpCount = info.usurpCount;
+      this.fightCount = info.fightCount;
+
+      this.paints = info.paints;
+
+      this.probPlaces = info.probPlaces;
     }
 
     this() {
@@ -51,21 +57,18 @@ class GameInfo {
       this.width   = res[3].to!int;
       this.height  = res[4].to!int;
       this.maxCure = res[5].to!int;
-      this.samuraiInfo = PLAYER_NUM.iota
-          .map!(i => SamuraiInfo())
-          .map!((s){
-            res = this.read();
-            s.homeX = res[0].to!int;
-            s.homeY = res[1].to!int;
-            return s;
-          })
-          .map!((s){
-            res = this.read();
-            s.rank = res[0].to!int;
-            s.score = res[1].to!int;
-            return s;
-          })
-          .array;
+
+      foreach(ref s; this.samuraiInfo) {
+        res = this.read();
+        s.homeX = res[0].to!int;
+        s.homeY = res[1].to!int;
+      }
+      foreach (ref s; this.samuraiInfo) {
+        res = this.read();
+        s.rank = res[0].to!int;
+        s.score = res[1].to!int;
+      }
+
       this.turn = 0;
       this.curePeriod = 0;
       this.field = new int[][](this.height, this.width);
@@ -74,6 +77,8 @@ class GameInfo {
       this.playerKill = 0;
       this.selfCount = 0;
       this.usurpCount = 0;
+
+      this.paints = [0, 0, 0, 0, 0, 0];
 
       0.writeln;
       stdout.flush;
@@ -106,7 +111,7 @@ class GameInfo {
       }
     }
 
-    bool isValid(int action) const pure @safe {
+    bool isValid(int action) const pure nothrow @safe {
       immutable me = this.samuraiInfo[this.weapon];
       int x = me.curX;
       int y = me.curY;
@@ -129,9 +134,9 @@ class GameInfo {
           if (me.hidden == 1 && this.field[y][x] >= 3) {
             return false;
           }
-          if (!this.samuraiInfo.map!((s) {
-            if ( s == me ) {
-              return true;
+          foreach (i, s; this.samuraiInfo) {
+            if ( i == this.weapon ) {
+              continue;
             }
             if ( x == s.curX && y == s.curY ) {
               return false;
@@ -139,9 +144,6 @@ class GameInfo {
             if ( x == s.homeX && y == s.homeY ) {
               return false;
             }
-            return true;
-          }).reduce!((a, b) => a && b)) {
-            return false;
           }
           return true;
         }
@@ -186,6 +188,12 @@ class GameInfo {
     void occupy(int dir) pure @safe {
       this.field = this.field.map!(a => a.dup).array;
 
+      occupyCount = 0;
+      playerKill = 0;
+      selfCount = 0;
+      usurpCount = 0;
+      fightCount = 0;
+
       immutable me = this.samuraiInfo[this.weapon];
       immutable int curX = me.curX;
       immutable int curY = me.curY;
@@ -206,18 +214,38 @@ class GameInfo {
         int nx = curX + pos.x;
         int ny = curY + pos.y;
         if (0<=nx && nx<width && 0<=ny && ny<height) {
-          bool isHome = this.samuraiInfo
-              .map!(s => s.homeX == nx && s.homeY == ny)
-              .reduce!((l, r) => l || r);
+          bool isHome = false;
+          foreach (s; this.samuraiInfo) {
+            isHome |= s.homeX == nx && s.homeY == ny;
+          }
           if (!isHome) {
             if (this.field[ny][nx] != this.weapon) {
               if (this.field[ny][nx] >= 3) {
                 if (this.field[ny][nx] < 6) {
                   ++usurpCount;
                 }
-                ++occupyCount;
+                if (this.field[ny][nx] >= 8) {
+                  ++occupyCount;
+                }
+              } else {
+                ++selfCount;
               }
-              ++selfCount;
+              if (this.field[ny][nx] < 6) {
+                int[2] scores;
+                for (int s = 0; s < 2; ++s) {
+                  for (int j = 0; j < 3; ++j) {
+                    scores[s] += this.paints[j + s * 3];
+                  }
+                }
+                int rem = this.width * this.height - (scores[0] + scores[1]);
+                scores[1] += (rem * 2) / 3;
+                if (scores[0] > scores[1]
+                    && (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
+                      || this.paints[this.field[ny][nx]] >= this.paints[this.weapon])
+                    ) {
+                  ++fightCount;
+                }
+              }
               this.field[ny][nx] = this.weapon;
             }
             for (int j = 3; j < GameInfo.PLAYER_NUM; ++j) {
@@ -261,18 +289,20 @@ class GameInfo {
       this.samuraiInfo[this.weapon] = me;
     }
 
-    double score(immutable Merits m) const pure nothrow @safe @nogc {
+    double score(const Merits m) const pure nothrow @safe {
       return this.samuraiInfo[this.weapon].hidden * m.hide
           + this.selfCount * m.self
           + this.playerKill * m.kill
           + this.occupyCount * m.terr
           + this.usurpCount * m.usur
-          + this.isSafe() * m.safe
+          + this.fightCount * m.fght
+          + this.safeLevel() * m.safe
           + this.deployLevel() * m.depl
           + this.centerLevel() * m.midd;
     }
 
-    bool isSafe() const pure nothrow @safe @nogc {
+    deprecated
+    bool isSafe() const pure nothrow @safe {
       bool flag = true;
       SamuraiInfo me = this.samuraiInfo[this.weapon];
       // 3
@@ -304,7 +334,50 @@ class GameInfo {
       }
       return flag;
     }
-    double deployLevel() const pure nothrow @safe @nogc {
+    bool isSafe(immutable int idx, immutable Point p) const pure nothrow @safe {
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
+      immutable int dx = Math.abs(p.x - me.curX);
+      immutable int dy = Math.abs(p.y - me.curY);
+      final switch (idx) {
+        case 3:
+          return (dx + dy > 5 || min(dx, dy) >= 2);
+        case 4:
+          return dx + dy > 3;
+        case 5:
+          return dx + dy > 3 || max(dx, dy) > 2;
+      }
+    }
+    double safeLevel() const pure nothrow @safe {
+      double safe = 1.0;
+      for (int i = 3; i < 6; ++i) {
+        SamuraiInfo si = this.samuraiInfo[i];
+        immutable Point p = Point(si.curX, si.curY);
+        if (p.x != -1 && p.y != -1) {
+          safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
+        } else {
+          immutable Point rh = Point(si.homeX, si.homeY);
+          int sum = probPlaces[i].length;
+          int cnt = 0;
+          if (probPlaces[i].find(rh).empty) {
+            ++sum;
+            if (isSafe(i, rh)) {
+              ++cnt;
+            }
+          }
+          assert (sum > 0);
+          foreach (q; probPlaces[i]) {
+            if (isSafe(i, q)) {
+              ++cnt;
+            }
+          }
+          assert (cnt <= sum);
+          safe = min(safe, Math.pow((cast(double)cnt / sum), 2));
+        }
+      }
+      return safe;
+    }
+
+    double deployLevel() const pure nothrow @safe {
       SamuraiInfo me = this.samuraiInfo[this.weapon];
       double res = 1 << 28;
       for (int i = 0; i < 3; ++i) {
@@ -314,11 +387,22 @@ class GameInfo {
       }
       return res;
     }
-    double centerLevel() const pure nothrow @safe @nogc {
+    double centerLevel() const pure nothrow @safe {
       SamuraiInfo me = this.samuraiInfo[this.weapon];
       double dist = Math.abs(me.curX - this.width / 2) + Math.abs(me.curY - this.height / 2);
       double maxd = this.width / 2 + this.height / 2;
       return maxd - dist;
+    }
+
+    void setRivalInfo(int[6] paints) pure nothrow @safe {
+      this.paints = paints;
+    }
+
+    void setProbPlaces(int idx, bool[Point] set) pure nothrow {
+      this.probPlaces[idx] = [];
+      foreach (p; set.byKey) {
+        this.probPlaces[idx] ~= p;
+      }
     }
 
   private:
@@ -326,6 +410,9 @@ class GameInfo {
     int playerKill;
     int selfCount;
     int usurpCount;
+    int fightCount;
+    int[6] paints;
+    Point[][6] probPlaces;
 
     string[] read() {
       string line = "";
