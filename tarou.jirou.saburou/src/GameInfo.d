@@ -238,7 +238,7 @@ class GameInfo {
                   }
                 }
                 int rem = this.width * this.height - (scores[0] + scores[1]);
-                scores[1] += (rem * 2) / 3;
+                scores[1] += (rem * 3) / 2;
                 if (scores[0] > scores[1]
                     && (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
                       || this.paints[this.field[ny][nx]] >= this.paints[this.weapon])
