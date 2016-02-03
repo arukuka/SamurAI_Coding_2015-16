@@ -356,8 +356,8 @@ class GameInfo {
           safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
         } else {
           immutable Point rh = Point(si.homeX, si.homeY);
-          int sum = probPlaces[i].length;
-          int cnt = 0;
+          ulong sum = probPlaces[i].length;
+          ulong cnt = 0;
           if (probPlaces[i].find(rh).empty) {
             ++sum;
             if (isSafe(i, rh)) {
@@ -398,7 +398,7 @@ class GameInfo {
       this.paints = paints;
     }
 
-    void setProbPlaces(int idx, bool[Point] set) pure nothrow {
+    void setProbPlaces(int idx, bool[Point] set) {
       this.probPlaces[idx] = [];
       foreach (p; set.byKey) {
         this.probPlaces[idx] ~= p;

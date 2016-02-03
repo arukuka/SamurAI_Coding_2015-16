@@ -756,12 +756,12 @@ final class RedBlackTree(T, alias less = "a < b", bool allowDuplicates = false)
         _begin = _end = allocate();
     }
 
-    static private Node allocate()
+    static private Node allocate() pure
     {
         return new RBNode;
     }
 
-    static private Node allocate(Elem v)
+    static private Node allocate(Elem v) pure
     {
         auto result = allocate();
         result.value = v;
@@ -841,7 +841,7 @@ final class RedBlackTree(T, alias less = "a < b", bool allowDuplicates = false)
 
     // add an element to the tree, returns the node added, or the existing node
     // if it has already been added and allowDuplicates is false
-    private auto _add(Elem n)
+    private auto _add(Elem n) pure
     {
         Node result;
         static if(!allowDuplicates)
@@ -1096,7 +1096,7 @@ final class RedBlackTree(T, alias less = "a < b", bool allowDuplicates = false)
      *
      * Complexity: $(BIGOH log(n))
      */
-    size_t stableInsert(Stuff)(Stuff stuff) if (isImplicitlyConvertible!(Stuff, Elem))
+    size_t stableInsert(Stuff)(Stuff stuff) pure if (isImplicitlyConvertible!(Stuff, Elem))
     {
         static if(allowDuplicates)
         {
@@ -1117,7 +1117,7 @@ final class RedBlackTree(T, alias less = "a < b", bool allowDuplicates = false)
      *
      * Complexity: $(BIGOH m * log(n))
      */
-    size_t stableInsert(Stuff)(Stuff stuff) if(isInputRange!Stuff && isImplicitlyConvertible!(ElementType!Stuff, Elem))
+    size_t stableInsert(Stuff)(Stuff stuff) pure if(isInputRange!Stuff && isImplicitlyConvertible!(ElementType!Stuff, Elem))
     {
         size_t result = 0;
         static if(allowDuplicates)
