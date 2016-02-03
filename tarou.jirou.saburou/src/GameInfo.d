@@ -238,8 +238,8 @@ class GameInfo {
                   }
                 }
                 int rem = this.width * this.height - (scores[0] + scores[1]);
-                scores[1] += (rem * 3) / 2;
-                if (scores[0] > scores[1]
+                scores[1] += rem;
+                if (scores[0] * 2 > scores[1] * 3
                     && (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
                       || this.paints[this.field[ny][nx]] >= this.paints[this.weapon])
                     ) {
@@ -371,7 +371,7 @@ class GameInfo {
             }
           }
           assert (cnt <= sum);
-          safe = min(safe, ((cast(double)cnt / sum) * 0.75 + 0.25));
+          safe = min(safe, ((cast(double)cnt / sum) * 0.25 + 0.75));
         }
       }
       return safe;
