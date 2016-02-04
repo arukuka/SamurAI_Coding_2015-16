@@ -41,7 +41,7 @@ class PlayerTarou : Player {
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
-        .setGrup(5)
+        .setGrup(3)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -64,7 +64,7 @@ class PlayerTarou : Player {
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
-        .setGrup(5)
+        .setGrup(3)
         .build();
     static const Merits[3] MERITS4WEAPON = [
       SPEAR_MERITS,
@@ -72,7 +72,7 @@ class PlayerTarou : Player {
       BATTLEAX_MERITS
     ];
 
-    static const Merits NEXT_MERITS = new Merits.MeritsBuilder()
+    static const Merits NEXT_DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
         .setKill(0)
@@ -83,6 +83,46 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setFght(5)
         .build();
+    static const Merits NEXT_SPEAR_MERITS = new Merits.MeritsBuilder()
+        .setTerr(25)
+        .setSelf(3)
+        .setKill(0)
+        .setHide(0)
+        .setSafe(0)
+        .setUsur(20)
+        .setDepl(1)
+        .setMidd(1)
+        .setFght(5)
+        .setGrup(3)
+        .build();
+    static const Merits NEXT_SWORD_MERITS = new Merits.MeritsBuilder()
+        .setTerr(25)
+        .setSelf(3)
+        .setKill(0)
+        .setHide(0)
+        .setSafe(0)
+        .setUsur(20)
+        .setDepl(1)
+        .setMidd(1)
+        .setFght(5)
+        .build();
+    static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
+        .setTerr(25)
+        .setSelf(3)
+        .setKill(0)
+        .setHide(0)
+        .setSafe(0)
+        .setUsur(20)
+        .setDepl(1)
+        .setMidd(1)
+        .setFght(5)
+        .setGrup(3)
+        .build();
+    static const Merits[3] NEXT_MERITS4WEAPON = [
+      NEXT_SPEAR_MERITS,
+      NEXT_SWORD_MERITS,
+      NEXT_BATTLEAX_MERITS
+    ];
 
     static class HistoryTree {
       private:
@@ -380,7 +420,7 @@ class PlayerTarou : Player {
         double next_accum = 0.0;
         int j = 0;
         foreach (hist; next_histories) {
-          double v = Math.exp(hist.getInfo().score(NEXT_MERITS));
+          double v = Math.exp(hist.getInfo().score(NEXT_MERITS4WEAPON[info.weapon]));
           next_accum += v;
           next_roulette[j++] = next_accum;
         }
@@ -388,7 +428,7 @@ class PlayerTarou : Player {
                     - next_roulette.assumeSorted.upperBound(uniform(0.0, next_accum)).length;
 
         double v = Math.exp(next.getInfo().score(MERITS4WEAPON[info.weapon])
-                    + next_histories[idx].getInfo().score(NEXT_MERITS));
+                    + next_histories[idx].getInfo().score(NEXT_MERITS4WEAPON[info.weapon]));
         accum += v;
         roulette[i++] = accum;
       }
@@ -400,6 +440,10 @@ class PlayerTarou : Player {
       auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
+      if (best.isValid(9)) {
+        best.doAction(9);
+        bestActions ~= 9;
+      }
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       stdout.flush;
 
