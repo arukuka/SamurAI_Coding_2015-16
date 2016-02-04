@@ -15,18 +15,20 @@ immutable class Merits {
     immutable double depl;
     immutable double midd;
     immutable double fght;
+    immutable double grup;
 
     static class MeritsBuilder : Builder!Merits {
       private:
-        double self = 1;
-        double kill = 1;
-        double hide = 1;
-        double terr = 1;
-        double safe = 1;
-        double usur = 1;
-        double depl = 1;
-        double midd = 1;
-        double fght = 1;
+        double self = 0;
+        double kill = 0;
+        double hide = 0;
+        double terr = 0;
+        double safe = 0;
+        double usur = 0;
+        double depl = 0;
+        double midd = 0;
+        double fght = 0;
+        double grup = 0;
 
       public:
       pure:
@@ -72,6 +74,10 @@ immutable class Merits {
           this.fght = fght;
           return this;
         }
+        MeritsBuilder setGrup(double grup) {
+          this.grup = grup;
+          return this;
+        }
     }
 
   private:
@@ -85,6 +91,7 @@ immutable class Merits {
       this.depl = mb.depl;
       this.midd = mb.midd;
       this.fght = mb.fght;
+      this.grup = mb.grup;
     }
 }
 

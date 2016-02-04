@@ -31,6 +31,47 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setFght(5)
         .build();
+    static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
+        .setTerr(25)
+        .setSelf(3)
+        .setKill(125)
+        .setHide(0)
+        .setSafe(200)
+        .setUsur(20)
+        .setDepl(1)
+        .setMidd(1)
+        .setFght(5)
+        .setGrup(5)
+        .build();
+    static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
+        .setTerr(25)
+        .setSelf(3)
+        .setKill(125)
+        .setHide(0)
+        .setSafe(200)
+        .setUsur(20)
+        .setDepl(1)
+        .setMidd(1)
+        .setFght(5)
+        .build();
+    static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
+        .setTerr(25)
+        .setSelf(3)
+        .setKill(125)
+        .setHide(0)
+        .setSafe(200)
+        .setUsur(20)
+        .setDepl(1)
+        .setMidd(1)
+        .setFght(5)
+        .setGrup(5)
+        .build();
+    static const Merits[3] MERITS4WEAPON = [
+      SPEAR_MERITS,
+      SWORD_MERITS,
+      BATTLEAX_MERITS
+    ];
+
     static const Merits NEXT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
@@ -346,7 +387,7 @@ class PlayerTarou : Player {
         auto idx = next_roulette.length
                     - next_roulette.assumeSorted.upperBound(uniform(0.0, next_accum)).length;
 
-        double v = Math.exp(next.getInfo().score(DEFAULT_MERITS)
+        double v = Math.exp(next.getInfo().score(MERITS4WEAPON[info.weapon])
                     + next_histories[idx].getInfo().score(NEXT_MERITS));
         accum += v;
         roulette[i++] = accum;

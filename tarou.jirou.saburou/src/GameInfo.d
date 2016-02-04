@@ -42,6 +42,7 @@ class GameInfo {
       this.selfCount = info.selfCount;
       this.usurpCount = info.usurpCount;
       this.fightCount = info.fightCount;
+      this.groupLevel = info.groupLevel;
 
       this.paints = info.paints;
 
@@ -77,6 +78,8 @@ class GameInfo {
       this.playerKill = 0;
       this.selfCount = 0;
       this.usurpCount = 0;
+      this.fightCount = 0;
+      this.groupLevel = 0;
 
       this.paints = [0, 0, 0, 0, 0, 0];
 
@@ -186,6 +189,7 @@ class GameInfo {
     }
 
     void occupy(int dir) pure @safe {
+      const fieldDup = this.field;
       this.field = this.field.map!(a => a.dup).array;
 
       occupyCount = 0;
@@ -193,6 +197,7 @@ class GameInfo {
       selfCount = 0;
       usurpCount = 0;
       fightCount = 0;
+      int groupCount = 0;
 
       immutable me = this.samuraiInfo[this.weapon];
       immutable int curX = me.curX;
@@ -247,6 +252,25 @@ class GameInfo {
                 }
               }
               this.field[ny][nx] = this.weapon;
+
+              enum ofs = [
+                [0, 1],
+                [0, -1],
+                [1, 0],
+                [-1, 0]
+              ];
+              foreach (dp; ofs) {
+                int adjx = nx + dp[0];
+                int adjy = ny + dp[1];
+                if ( adjx < 0 || this.width <= adjx || adjy < 0 || this.height <= adjy ) {
+                  ++groupCount;
+                  break;
+                }
+                if (fieldDup[adjy][adjx] == this.weapon) {
+                  ++groupCount;
+                  break;
+                }
+              }
             }
             for (int j = 3; j < GameInfo.PLAYER_NUM; ++j) {
               SamuraiInfo si = this.samuraiInfo[j];
@@ -261,6 +285,8 @@ class GameInfo {
           }
         }
       }
+
+      groupLevel = cast(double) groupCount / size[this.weapon];
     }
 
     void doAction(int action) pure @safe {
@@ -296,6 +322,7 @@ class GameInfo {
           + this.occupyCount * m.terr
           + this.usurpCount * m.usur
           + this.fightCount * m.fght
+          + this.groupLevel * m.grup
           + this.safeLevel() * m.safe
           + this.deployLevel() * m.depl
           + this.centerLevel() * m.midd;
@@ -411,6 +438,7 @@ class GameInfo {
     int selfCount;
     int usurpCount;
     int fightCount;
+    double groupLevel;
     int[6] paints;
     Point[][6] probPlaces;
 
