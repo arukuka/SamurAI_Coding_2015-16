@@ -409,6 +409,18 @@ class GameInfo {
           return (dx + dy) >= 5 || max(dx, dy) >= 4;
       }
     }
+    static bool isSafeLimit(immutable Point me, immutable Point rv, immutable int idx) pure nothrow @safe {
+      immutable int dx = Math.abs(rv.x - me.x);
+      immutable int dy = Math.abs(rv.y - me.y);
+      final switch(idx) {
+        case 3:
+          return (dx + dy) == 6 || min(dx, dy) == 2;
+        case 4:
+          return (dx + dy) == 4;
+        case 5:
+          return (dx + dy) == 4 || max(dx, dy) == 3;
+      }
+    }
     deprecated
     bool isSafe(immutable int idx, immutable Point p) const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
@@ -460,7 +472,8 @@ class GameInfo {
               return true;
             }
             +/
-            return isSafeW2T(mep, rvp, idx) || isSafeW2A(mep, rvp, idx);
+            return isSafeW2T(mep, rvp, idx)
+                || (!isAttackContain && me.hidden && isSafeW2A(mep, rvp, idx));
             /+ TIMED OUT
             enum ofs = [
               [0, 1],
@@ -516,7 +529,7 @@ class GameInfo {
     }
 
     double deployLevel() const pure nothrow @safe {
-      SamuraiInfo me = this.samuraiInfo[this.weapon];
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
       double res = 1 << 28;
       for (int i = 0; i < 3; ++i) {
         if (this.weapon == i) continue;
@@ -526,7 +539,7 @@ class GameInfo {
       return res;
     }
     double centerLevel() const pure nothrow @safe {
-      SamuraiInfo me = this.samuraiInfo[this.weapon];
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
       double dist = Math.abs(me.curX - this.width / 2) + Math.abs(me.curY - this.height / 2);
       double maxd = this.width / 2 + this.height / 2;
       return maxd - dist;
@@ -534,6 +547,27 @@ class GameInfo {
     bool hasKilledRivalAtNextTurn() const pure nothrow @safe {
       immutable int[3] turns = nextAITurn();
       return isKilled[this.weapon] && turns[this.weapon] == 0;
+    }
+    bool hasHiddenTactically() const pure nothrow @safe {
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
+      if (isAttackContain || !me.hidden) {
+        return false;
+      }
+      immutable mep = Point(me.curX, me.curY);
+      immutable int[3] turns = nextAITurn();
+      bool flag = false;
+      for (int i = 3; i < 6; ++i) {
+        const SamuraiInfo si = this.samuraiInfo[i];
+        immutable sip = Point(si.curX, si.curY);
+        if (sip.x == -1 && sip.y == -1) {
+          continue;
+        }
+        if (turns[i - 3] != 1) {
+          continue;
+        }
+        flag |= isSafeLimit(mep, sip, i);
+      }
+      return flag;
     }
 
     void setRivalInfo(int[6] paints) pure nothrow @safe {

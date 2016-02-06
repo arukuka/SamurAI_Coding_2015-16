@@ -17,6 +17,7 @@ immutable class Merits {
     immutable double fght; // occupying hiscoreman's teritorry
     immutable double grup; // occupying with grouping
     immutable double krnt; // killing rival who is enemy w/ same weapon at next turn
+    immutable double tchd; // has hidden tactically
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -31,6 +32,7 @@ immutable class Merits {
         double fght = 0;
         double grup = 0;
         double krnt = 0;
+        double tchd = 0;
 
       public:
       pure:
@@ -84,6 +86,10 @@ immutable class Merits {
           this.krnt = krnt;
           return this;
         }
+        MeritsBuilder setTchd(double tchd) {
+          this.tchd = tchd;
+          return this;
+        }
     }
 
   private:
@@ -99,6 +105,7 @@ immutable class Merits {
       this.fght = mb.fght;
       this.grup = mb.grup;
       this.krnt = mb.krnt;
+      this.tchd = mb.tchd;
     }
 }
 
