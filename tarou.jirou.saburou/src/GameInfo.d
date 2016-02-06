@@ -16,6 +16,20 @@ class GameInfo {
   public:
     enum PLAYER_NUM = 6;
     enum TURNS_RULE = [0, 3, 4, 1, 2, 5, 3, 0, 1, 4, 5, 2];
+    enum int[3][12] NEXT_AI_TURN_LUT = [
+      [2, 1, 1],
+      [0, 1, 1],
+      [1, 2, 1],
+      [1, 0, 1],
+      [1, 1, 2],
+      [1, 1, 0],
+      [2, 1, 1],
+      [0, 1, 1],
+      [1, 2, 1],
+      [1, 0, 1],
+      [1, 1, 2],
+      [1, 1, 0]
+    ];
     int turns;
     int side;
     int weapon;
@@ -429,7 +443,7 @@ class GameInfo {
     bool isSafe2(immutable int idx, immutable Point rvp) const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
       immutable mep = Point(me.curX, me.curY);
-      immutable int[3] turns = nextAITurn();
+      immutable int[3] turns = nextAITurn2();
       final switch (turns[idx - 3]) {
         case 0:
           return true;
@@ -545,7 +559,7 @@ class GameInfo {
       return maxd - dist;
     }
     bool hasKilledRivalAtNextTurn() const pure nothrow @safe {
-      immutable int[3] turns = nextAITurn();
+      immutable int[3] turns = nextAITurn2();
       return isKilled[this.weapon] && turns[this.weapon] == 0;
     }
     bool hasHiddenTactically() const pure nothrow @safe {
@@ -554,7 +568,7 @@ class GameInfo {
         return false;
       }
       immutable mep = Point(me.curX, me.curY);
-      immutable int[3] turns = nextAITurn();
+      immutable int[3] turns = nextAITurn2();
       bool flag = false;
       for (int i = 3; i < 6; ++i) {
         const SamuraiInfo si = this.samuraiInfo[i];
@@ -581,6 +595,7 @@ class GameInfo {
       }
     }
 
+    deprecated
     int[3] nextAITurn() const pure @safe nothrow {
       int id = this.side * 3 + this.weapon;
       assert (TURNS_RULE[this.turn % 12] == id);
@@ -596,7 +611,11 @@ class GameInfo {
       for (int i = 0; i < 3; ++i) {
         res[i] = cnt[i + (1 - this.side) * 3];
       }
+      assert (res == NEXT_AI_TURN_LUT[this.turn % 12]);
       return res;
+    }
+    int[3] nextAITurn2() const pure @safe nothrow {
+      return NEXT_AI_TURN_LUT[this.turn % 12];
     }
  private:
     int occupyCount;

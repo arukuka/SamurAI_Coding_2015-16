@@ -469,7 +469,7 @@ class PlayerTarou : Player {
 
       fieldDup = best.field.map!(a => a.dup).array;
       samuraiDup = best.samuraiInfo.dup;
-      if (best.nextAITurn()[best.weapon] == 0) {
+      if (best.nextAITurn2()[best.weapon] == 0) {
         auto rival = best.samuraiInfo[best.weapon + 3];
         rivalPointDup = Point(rival.curX, rival.curY);
         rivalPointDupFlag = true;
