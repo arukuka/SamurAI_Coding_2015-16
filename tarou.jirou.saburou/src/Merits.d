@@ -6,16 +6,17 @@ interface Builder(T) {
 
 immutable class Merits {
   public:
-    immutable double self;
-    immutable double kill;
-    immutable double hide;
-    immutable double terr;
-    immutable double safe;
-    immutable double usur;
-    immutable double depl;
-    immutable double midd;
-    immutable double fght;
-    immutable double grup;
+    immutable double self; // occupying out team's territory
+    immutable double kill; // has killed
+    immutable double hide; // being hidden
+    immutable double terr; // occupying nobody's territory
+    immutable double safe; // being safe
+    immutable double usur; // occupying enemy's territory
+    immutable double depl; // deployment for our team
+    immutable double midd; // stay at middle in the field
+    immutable double fght; // occupying hiscoreman's teritorry
+    immutable double grup; // occupying with grouping
+    immutable double krnt; // killing rival who is enemy w/ same weapon at next turn
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -29,6 +30,7 @@ immutable class Merits {
         double midd = 0;
         double fght = 0;
         double grup = 0;
+        double krnt = 0;
 
       public:
       pure:
@@ -78,6 +80,10 @@ immutable class Merits {
           this.grup = grup;
           return this;
         }
+        MeritsBuilder setKrnt(double krnt) {
+          this.krnt = krnt;
+          return this;
+        }
     }
 
   private:
@@ -92,6 +98,7 @@ immutable class Merits {
       this.midd = mb.midd;
       this.fght = mb.fght;
       this.grup = mb.grup;
+      this.krnt = mb.krnt;
     }
 }
 

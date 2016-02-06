@@ -19,6 +19,8 @@ class PlayerTarou : Player {
     int[][] fieldDup = null;
     SamuraiInfo[] samuraiDup = null;
     bool[Point][6] probPointDup;
+    Point rivalPointDup;
+    bool rivalPointDupFlag = false;
 
     static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -86,37 +88,31 @@ class PlayerTarou : Player {
     static const Merits NEXT_SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
-        .setKill(0)
-        .setHide(0)
-        .setSafe(0)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
         .setGrup(3)
+        .setKrnt(125)
         .build();
     static const Merits NEXT_SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
-        .setKill(0)
-        .setHide(0)
-        .setSafe(0)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
+        .setKrnt(125)
         .build();
     static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
-        .setKill(0)
-        .setHide(0)
-        .setSafe(0)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
         .setGrup(3)
+        .setKrnt(125)
         .build();
     static const Merits[3] NEXT_MERITS4WEAPON = [
       NEXT_SPEAR_MERITS,
@@ -280,6 +276,21 @@ class PlayerTarou : Player {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon);
       }
 
+      if (rivalPointDupFlag) {
+        auto rival = info.samuraiInfo[info.weapon + 3];
+        if (rival.curX == -1 && rival.curY == -1) {
+          if (rivalPointDup.x != -1 && rivalPointDup.y != -1
+              && info.field[rivalPointDup.y][rivalPointDup.x] >= 3) {
+            debug(2) {
+              stderr.writeln("\tknew it : (", rivalPointDup.x, ", ", rivalPointDup.y, ") ... ", info.field[rivalPointDup.y][rivalPointDup.x]);
+            }
+            rival.curX = rivalPointDup.x;
+            rival.curY = rivalPointDup.y;
+            info.samuraiInfo[info.weapon + 3] = rival;
+          }
+        }
+      }
+
       if (latestField is null) {
         latestField = info.field.map!(a => a.dup).array;
       } else {
@@ -337,7 +348,9 @@ class PlayerTarou : Player {
         for (int i = 3; i < 6; ++i) {
           auto si = info.samuraiInfo[i];
           if (si.curX == -1 && si.curY == -1) {
-            debug(2) {stderr.writeln("search ", i);}
+            debug(2) {
+              stderr.writeln("search ", i);
+            }
             bool[Point] set;
             for (int y = 0; y < info.height; ++y) {
               for (int x = 0; x < info.width; ++x) {
@@ -387,7 +400,9 @@ class PlayerTarou : Player {
               Point p = set.byKey().front;
               int x = p.x;
               int y = p.y;
-              debug(2) {stderr.writeln("\t\tgot it! : ", p);}
+              debug(2) {
+                stderr.writeln("\t\tgot it! : ", p);
+              }
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
@@ -440,15 +455,25 @@ class PlayerTarou : Player {
       auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
+      /+
       if (best.isValid(9)) {
         best.doAction(9);
         bestActions ~= 9;
       }
+      +/
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       stdout.flush;
 
       fieldDup = best.field.map!(a => a.dup).array;
       samuraiDup = best.samuraiInfo.dup;
+      if (best.nextAITurn()[best.weapon] == 0) {
+        auto rival = best.samuraiInfo[best.weapon + 3];
+        rivalPointDup = Point(rival.curX, rival.curY);
+        rivalPointDupFlag = true;
+      } else {
+        rivalPointDup = Point(-1, -1);
+        rivalPointDupFlag = false;
+      }
     }
 }
 

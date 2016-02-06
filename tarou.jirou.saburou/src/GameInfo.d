@@ -15,6 +15,7 @@ alias Point = Tuple!(int, "x", int, "y");
 class GameInfo {
   public:
     enum PLAYER_NUM = 6;
+    enum TURNS_RULE = [0, 3, 4, 1, 2, 5, 3, 0, 1, 4, 5, 2];
     int turns;
     int side;
     int weapon;
@@ -47,6 +48,9 @@ class GameInfo {
       this.paints = info.paints;
 
       this.probPlaces = info.probPlaces;
+
+      this.isAttackContain = info.isAttackContain;
+      this.isKilled = info.isKilled;
     }
 
     this() {
@@ -81,7 +85,10 @@ class GameInfo {
       this.fightCount = 0;
       this.groupLevel = 0;
 
-      this.paints = [0, 0, 0, 0, 0, 0];
+      this.paints = 0;
+
+      this.isAttackContain = false;
+      this.isKilled = false;
 
       0.writeln;
       stdout.flush;
@@ -197,7 +204,10 @@ class GameInfo {
       selfCount = 0;
       usurpCount = 0;
       fightCount = 0;
+      isKilled = false;
       int groupCount = 0;
+
+      isAttackContain |= true;
 
       immutable me = this.samuraiInfo[this.weapon];
       immutable int curX = me.curX;
@@ -280,6 +290,7 @@ class GameInfo {
                 si.hidden = 0;
                 this.samuraiInfo[j] = si;
                 ++playerKill;
+                isKilled[j - 3] |= true;
               }
             }
           }
@@ -325,7 +336,8 @@ class GameInfo {
           + this.groupLevel * m.grup
           + this.safeLevel() * m.safe
           + this.deployLevel() * m.depl
-          + this.centerLevel() * m.midd;
+          + this.centerLevel() * m.midd
+          + this.hasKilledRivalAtNextTurn() * m.krnt;
     }
 
     deprecated
@@ -361,10 +373,9 @@ class GameInfo {
       }
       return flag;
     }
-    bool isSafe(immutable int idx, immutable Point p) const pure nothrow @safe {
-      const SamuraiInfo me = this.samuraiInfo[this.weapon];
-      immutable int dx = Math.abs(p.x - me.curX);
-      immutable int dy = Math.abs(p.y - me.curY);
+    static bool isSafe(immutable Point me, immutable Point rv, immutable int idx) pure nothrow @safe {
+      immutable int dx = Math.abs(rv.x - me.x);
+      immutable int dy = Math.abs(rv.y - me.y);
       final switch (idx) {
         case 3:
           return (dx + dy > 5 || min(dx, dy) >= 2);
@@ -374,26 +385,126 @@ class GameInfo {
           return dx + dy > 3 || max(dx, dy) > 2;
       }
     }
+    static bool isSafeW2T(immutable Point me, immutable Point rv, immutable int idx) pure nothrow @safe {
+      immutable int dx = Math.abs(rv.x - me.x);
+      immutable int dy = Math.abs(rv.y - me.y);
+      final switch (idx) {
+        case 3:
+          return (dx + dy) >= 9;
+        case 4:
+          return (dx + dy) >= 7;
+        case 5:
+          return (dx + dy) >= 7 || max(dx, dy) >= 6;
+      }
+    }
+    static bool isSafeW2A(immutable Point me, immutable Point rv, immutable int idx) pure nothrow @safe {
+      immutable int dx = Math.abs(rv.x - me.x);
+      immutable int dy = Math.abs(rv.y - me.y);
+      final switch (idx) {
+        case 3:
+          return (dx + dy) >= 7 || min(dx, dy) >= 3;
+        case 4:
+          return (dx + dy) >= 5;
+        case 5:
+          return (dx + dy) >= 5 || max(dx, dy) >= 4;
+      }
+    }
+    deprecated
+    bool isSafe(immutable int idx, immutable Point p) const pure nothrow @safe {
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
+      return GameInfo.isSafe(Point(me.curX, me.curY), p, idx);
+    }
+    bool isSafe2(immutable int idx, immutable Point rvp) const pure nothrow @safe {
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
+      immutable mep = Point(me.curX, me.curY);
+      immutable int[3] turns = nextAITurn();
+      final switch (turns[idx - 3]) {
+        case 0:
+          return true;
+        case 1:
+          return isSafe(mep, rvp, idx);
+        case 2:
+          if (isKilled[idx - 3]) {
+            return true;
+          } else {
+            /+ TIMED OUT
+            enum large_ofs = [
+                                            [0, -3],
+                                  [-1, -2], [0, -2], [1, -2],
+                        [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1],
+              [-3,  0], [-2,  0], [-1,  0], [0,  0], [1,  0], [2,  0], [3, 0],
+                        [-2,  1], [-1,  1], [0,  1], [1,  1], [2,  1],
+                                  [-1,  2], [0,  2], [1,  2],
+                                            [0,  3]
+            ];
+            bool is_absolute_safe = true;
+            foreach (dp; large_ofs) {
+              if (!is_absolute_safe) {
+                break;
+              }
+              Point np = Point(p.x + dp[0], p.y + dp[1]);
+              if (np.x < 0 || this.width <= np.x || np.y < 0 || this.height <= np.y) {
+                continue;
+              }
+              is_absolute_safe &= isSafe(idx, np);
+            }
+            if (is_absolute_safe) {
+              return true;
+            }
+            +/
+            /+
+            if (isSafeW2T(mep, rvp, idx)) {
+              return true;
+            }
+            if (isSafeW2A(mep, rvp, idx)) {
+              return true;
+            }
+            +/
+            return isSafeW2T(mep, rvp, idx) || isSafeW2A(mep, rvp, idx);
+            /+ TIMED OUT
+            enum ofs = [
+              [0, 1],
+              [0, -1],
+              [1, 0],
+              [-1, 0]
+            ];
+            bool res = isSafe(mep, rvp, idx) && !isAttackContain && me.hidden;
+            foreach (dp; ofs) {
+              if (!res) {
+                break;
+              }
+              Point np = Point(rvp.x + dp[0], rvp.y + dp[1]);
+              if (np.x < 0 || this.width <= np.x || np.y < 0 || this.height <= np.y) {
+                continue;
+              }
+              res &= isSafe(mep, np, idx);
+            }
+            return res;
+            +/
+          }
+      }
+    }
+
     double safeLevel() const pure nothrow @safe {
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
         if (p.x != -1 && p.y != -1) {
-          safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
+          safe = min(safe, isSafe2(i, p) ? 1.0 : 0.0);
         } else {
           immutable Point rh = Point(si.homeX, si.homeY);
           ulong sum = probPlaces[i].length;
           ulong cnt = 0;
           if (probPlaces[i].find(rh).empty) {
             ++sum;
-            if (isSafe(i, rh)) {
+            if (isSafe2(i, rh)) {
               ++cnt;
             }
           }
           assert (sum > 0);
           foreach (q; probPlaces[i]) {
-            if (isSafe(i, q)) {
+            if (isSafe2(i, q)) {
               ++cnt;
             }
           }
@@ -420,6 +531,10 @@ class GameInfo {
       double maxd = this.width / 2 + this.height / 2;
       return maxd - dist;
     }
+    bool hasKilledRivalAtNextTurn() const pure nothrow @safe {
+      immutable int[3] turns = nextAITurn();
+      return isKilled[this.weapon] && turns[this.weapon] == 0;
+    }
 
     void setRivalInfo(int[6] paints) pure nothrow @safe {
       this.paints = paints;
@@ -432,7 +547,24 @@ class GameInfo {
       }
     }
 
-  private:
+    int[3] nextAITurn() const pure @safe nothrow {
+      int id = this.side * 3 + this.weapon;
+      assert (TURNS_RULE[this.turn % 12] == id);
+      int[6] cnt = 0;
+      for (int i = 1; i <= 12; ++i) {
+        int jd = TURNS_RULE[(this.turn + i) % 12];
+        if (jd == id) {
+          break;
+        }
+        ++cnt[jd];
+      }
+      int[3] res;
+      for (int i = 0; i < 3; ++i) {
+        res[i] = cnt[i + (1 - this.side) * 3];
+      }
+      return res;
+    }
+ private:
     int occupyCount;
     int playerKill;
     int selfCount;
@@ -441,6 +573,8 @@ class GameInfo {
     double groupLevel;
     int[6] paints;
     Point[][6] probPlaces;
+    bool isAttackContain;
+    bool[3] isKilled;
 
     string[] read() {
       string line = "";
