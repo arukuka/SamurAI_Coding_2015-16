@@ -536,7 +536,7 @@ class GameInfo {
             }
           }
           assert (cnt <= sum);
-          safe = min(safe, ((cast(double)cnt / sum) * 0.25 + 0.75));
+          safe = min(safe, 1 - (Math.pow(1 - cast(double)cnt / sum, 2.0)));
         }
       }
       return safe;
