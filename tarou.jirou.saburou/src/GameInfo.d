@@ -595,7 +595,7 @@ class GameInfo {
         this.probPlaces[idx] ~= p;
       }
     }
-    void setProbPlaces(int idx, Point[] arr) pure nothrow @safe {
+    void setProbPlaces(int idx, Point[] arr) pure @safe {
       this.probPlaces[idx] = arr.dup;
     }
 
