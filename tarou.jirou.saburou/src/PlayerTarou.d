@@ -18,7 +18,7 @@ class PlayerTarou : Player {
     int[][] latestField = null;
     int[][] fieldDup = null;
     SamuraiInfo[] samuraiDup = null;
-    bool[Point][6] probPointDup;
+    Point[][6] probPointDup;
     Point rivalPointDup;
     bool rivalPointDupFlag = false;
 
@@ -332,17 +332,13 @@ class PlayerTarou : Player {
           [0, -1, 1, 1, 1, -1, 0]
         ];
         alias Point = Tuple!(int, "x", int, "y");
-        bool[Point] [int] map;
-        for (int i = 3; i < 6; ++i) {
-          bool[Point] set;
-          map[i] = set;
-        }
+        int[6] diffPrevCount;
         for (int y = 0; y < info.height; ++y) {
           for (int x = 0; x < info.width; ++x) {
             if (info.field[y][x] != fieldDup[y][x] && fieldDup[y][x] != 9) {
               int v = info.field[y][x];
               if (3 <= v && v < 6) {
-                map[v][Point(x, y)] = true;
+                ++diffPrevCount[v];
               }
             }
           }
@@ -354,7 +350,7 @@ class PlayerTarou : Player {
             debug(2) {
               stderr.writeln("search ", i);
             }
-            bool[Point] set;
+            Point[] arr;
             for (int y = 0; y < info.height; ++y) {
               for (int x = 0; x < info.width; ++x) {
                 for (int r = 0; r < 4; ++r) {
@@ -362,7 +358,7 @@ class PlayerTarou : Player {
                   if (samuraiDup[i].curX != -1 && samuraiDup[i].curY != -1) {
                     flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) <= 1;
                   }
-                  flag &= map[i].length > 0;
+                  flag &= diffPrevCount[i] > 0;
                   bool done = false;
                   int diffCount = 0;
                   for (int d = 0; flag && d < ox[i - 3].length; ++d) {
@@ -384,23 +380,24 @@ class PlayerTarou : Player {
                     }
                   }
                   flag &= done;
-                  flag &= diffCount == map[i].length;
+                  flag &= diffCount == diffPrevCount[i];
                   if (info.samuraiInfo[i].curX == -1 && info.samuraiInfo[i].curY == -1) {
                     flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
                   }
                   if (flag) {
-                    set[Point(x, y)] = true;
+                    arr ~= Point(x, y);
                   }
                 }
               }
             }
+            arr = arr.sort.uniq.array;
             debug(2) {
-              foreach (k; set.byKey) {
+              foreach (k; arr) {
                 stderr.writeln("\t? : ", k);
               }
             }
-            if (set.length == 1) {
-              Point p = set.byKey().front;
+            if (arr.length == 1) {
+              Point p = arr.front;
               int x = p.x;
               int y = p.y;
               debug(2) {
@@ -409,12 +406,12 @@ class PlayerTarou : Player {
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
-            } else if (set.length == 0) {
+            } else if (arr.length == 0) {
               info.setProbPlaces(i, probPointDup[i]);
               probPointDup[i] = probPointDup[i].init;
             } else {
-              info.setProbPlaces(i, set);
-              probPointDup[i] = set;
+              info.setProbPlaces(i, arr);
+              probPointDup[i] = arr;
             }
           }
         }

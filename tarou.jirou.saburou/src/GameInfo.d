@@ -588,11 +588,15 @@ class GameInfo {
       this.paints = paints;
     }
 
+    deprecated
     void setProbPlaces(int idx, bool[Point] set) {
       this.probPlaces[idx] = [];
       foreach (p; set.byKey) {
         this.probPlaces[idx] ~= p;
       }
+    }
+    void setProbPlaces(int idx, Point[] arr) pure nothrow @safe {
+      this.probPlaces[idx] = arr.dup;
     }
 
     deprecated
