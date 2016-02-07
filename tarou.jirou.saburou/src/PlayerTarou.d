@@ -455,12 +455,10 @@ class PlayerTarou : Player {
       auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
-      /+
       if (best.isValid(9)) {
         best.doAction(9);
         bestActions ~= 9;
       }
-      +/
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       stdout.flush;
 
