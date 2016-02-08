@@ -200,7 +200,7 @@ class PlayerTarou : Player {
       }
     }
 
-    void plan2(HistoryTree root) @trusted
+    void plan2(HistoryTree root) pure @trusted
     {
       auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
       Node atom = {
@@ -463,6 +463,10 @@ class PlayerTarou : Player {
       stdout.flush;
 
       fieldDup = best.field.map!(a => a.dup).array;
+      const auto ops = best.getOccupiedPoints;
+      foreach (Point op; ops.byKey) {
+        fieldDup[op.y][op.x] = ops[op];
+      }
       samuraiDup = best.samuraiInfo.dup;
       if (best.nextAITurn2()[best.weapon] == 0) {
         auto rival = best.samuraiInfo[best.weapon + 3];

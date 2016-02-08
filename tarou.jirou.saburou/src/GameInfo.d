@@ -215,7 +215,7 @@ class GameInfo {
       }
     }
 
-    void occupy(int dir) @trusted {
+    void occupy(int dir) pure @trusted {
       const fieldDup = this.field;
       // this.field = this.field.map!(a => a.dup).array;
       const field = this.field;
@@ -323,7 +323,7 @@ class GameInfo {
       groupLevel = cast(double) groupCount / size[this.weapon];
     }
 
-    void doAction(int action) @trusted{
+    void doAction(int action) pure @trusted {
       assert (isValid(action));
       auto me = this.samuraiInfo[this.weapon];
       int curX = me.curX;
@@ -633,6 +633,16 @@ class GameInfo {
     }
     int[3] nextAITurn2() const pure @safe nothrow {
       return NEXT_AI_TURN_LUT[this.turn % 12];
+    }
+    int[Point] getOccupiedPoints() @trusted {
+      return occupiedPoints.dup;
+    }
+    static int[Point] dup(in int[Point] src) pure @trusted nothrow {
+      int[Point] dst;
+      foreach (key; src.byKey) {
+        dst[key] = src[key];
+      }
+      return dst;
     }
  private:
     int occupyCount;
