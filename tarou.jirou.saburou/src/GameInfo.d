@@ -640,7 +640,7 @@ class GameInfo {
     int[3] nextAITurn2() const pure @safe nothrow {
       return NEXT_AI_TURN_LUT[this.turn % 12];
     }
-    void paintUsingHistory() pure @safe nothrow {
+    void paintUsingHistory() pure @safe {
       this.field = this.field.map!(a => a.dup).array;
       foreach(panel; occupiedPointsArray) {
         this.field[panel.key.y][panel.key.x] = panel.val;
