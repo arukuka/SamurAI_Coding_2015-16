@@ -65,6 +65,8 @@ class GameInfo {
 
       this.isAttackContain = info.isAttackContain;
       this.isKilled = info.isKilled;
+      
+      this.occupiedPoints = info.occupiedPoints;
     }
 
     this() {
@@ -155,7 +157,9 @@ class GameInfo {
               || y < 0 || this.height <= y) {
             return false;
           }
-          if (me.hidden == 1 && this.field[y][x] >= 3) {
+          if (me.hidden == 1 && ((Point(x, y) in this.occupiedPoints) ?
+            this.occupiedPoints[Point(x, y)]
+            : this.field[y][x]) >= 3) {
             return false;
           }
           foreach (i, s; this.samuraiInfo) {
@@ -175,7 +179,9 @@ class GameInfo {
           if (me.hidden == 1) {
             return false;
           }
-          if (this.field[y][x] >= 3) {
+          if (((Point(x, y) in this.occupiedPoints) ?
+            this.occupiedPoints[Point(x, y)]
+            : this.field[y][x]) >= 3) {
             return false;
           }
           return true;
@@ -211,7 +217,9 @@ class GameInfo {
 
     void occupy(int dir) pure @safe {
       const fieldDup = this.field;
-      this.field = this.field.map!(a => a.dup).array;
+      // this.field = this.field.map!(a => a.dup).array;
+      const field = this.field;
+      this.occupiedPoints = this.occupiedPoints.dup;
 
       occupyCount = 0;
       playerKill = 0;
@@ -248,18 +256,18 @@ class GameInfo {
             isHome |= s.homeX == nx && s.homeY == ny;
           }
           if (!isHome) {
-            if (this.field[ny][nx] != this.weapon) {
-              if (this.field[ny][nx] >= 3) {
-                if (this.field[ny][nx] < 6) {
+            if (field[ny][nx] != this.weapon) {
+              if (field[ny][nx] >= 3) {
+                if (field[ny][nx] < 6) {
                   ++usurpCount;
                 }
-                if (this.field[ny][nx] >= 8) {
+                if (field[ny][nx] >= 8) {
                   ++occupyCount;
                 }
               } else {
                 ++selfCount;
               }
-              if (this.field[ny][nx] < 6) {
+              if (field[ny][nx] < 6) {
                 int[2] scores;
                 for (int s = 0; s < 2; ++s) {
                   for (int j = 0; j < 3; ++j) {
@@ -270,12 +278,13 @@ class GameInfo {
                 scores[1] += rem;
                 if (scores[0] * 2 > scores[1] * 3
                     && (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
-                      || this.paints[this.field[ny][nx]] >= this.paints[this.weapon])
+                      || this.paints[field[ny][nx]] >= this.paints[this.weapon])
                     ) {
                   ++fightCount;
                 }
               }
-              this.field[ny][nx] = this.weapon;
+              // field[ny][nx] = this.weapon;
+              this.occupiedPoints[Point(nx, ny)] = this.weapon;
 
               enum ofs = [
                 [0, 1],
@@ -290,7 +299,7 @@ class GameInfo {
                   ++groupCount;
                   break;
                 }
-                if (fieldDup[adjy][adjx] == this.weapon) {
+                if (fieldDup[adjy][adjx] < 3) {
                   ++groupCount;
                   break;
                 }
@@ -351,7 +360,8 @@ class GameInfo {
           + this.safeLevel() * m.safe
           + this.deployLevel() * m.depl
           + this.centerLevel() * m.midd
-          + this.hasKilledRivalAtNextTurn() * m.krnt;
+          + this.hasKilledRivalAtNextTurn() * m.krnt
+          + this.hasHiddenTactically() * m.tchd;
     }
 
     deprecated
@@ -536,7 +546,7 @@ class GameInfo {
             }
           }
           assert (cnt <= sum);
-          safe = min(safe, 1 - (Math.pow(1 - cast(double)cnt / sum, 2.0)));
+          safe = min(safe, 0.75 + (cast(double)cnt / sum) * 0.25);
         }
       }
       return safe;
@@ -573,7 +583,10 @@ class GameInfo {
       for (int i = 3; i < 6; ++i) {
         const SamuraiInfo si = this.samuraiInfo[i];
         immutable sip = Point(si.curX, si.curY);
-        if (sip.x == -1 && sip.y == -1) {
+        if (sip.x == -1 || sip.y == -1) {
+          continue;
+        }
+        if (sip.x == si.homeX && sip.y == si.homeY) {
           continue;
         }
         if (turns[i - 3] != 1) {
@@ -632,6 +645,7 @@ class GameInfo {
     Point[][6] probPlaces;
     bool isAttackContain;
     bool[3] isKilled;
+    int[Point] occupiedPoints;
 
     string[] read() {
       string line = "";
