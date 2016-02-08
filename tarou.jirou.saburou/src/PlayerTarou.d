@@ -200,7 +200,7 @@ class PlayerTarou : Player {
       }
     }
 
-    void plan2(HistoryTree root) @trusted
+    void plan2(HistoryTree root) pure @trusted
     {
       auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
       Node atom = {
@@ -427,6 +427,7 @@ class PlayerTarou : Player {
       int i = 0;
       //next UNCO-de
       foreach (next; histories) {
+        next.info.paintUsingHistory();
         HistoryTree next_root = new HistoryTree(null, next.info, 0);
         plan2(next_root);
         auto next_histories = next_root.collect();
@@ -462,11 +463,8 @@ class PlayerTarou : Player {
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       stdout.flush;
 
+      best.paintUsingHistory();
       fieldDup = best.field.map!(a => a.dup).array;
-      const auto ops = best.getOccupiedPoints;
-      foreach (Point op; ops.byKey) {
-        fieldDup[op.y][op.x] = ops[op];
-      }
       samuraiDup = best.samuraiInfo.dup;
       if (best.nextAITurn2()[best.weapon] == 0) {
         auto rival = best.samuraiInfo[best.weapon + 3];

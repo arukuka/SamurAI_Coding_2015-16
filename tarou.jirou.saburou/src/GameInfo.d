@@ -66,7 +66,7 @@ class GameInfo {
       this.isAttackContain = info.isAttackContain;
       this.isKilled = info.isKilled;
       
-      this.occupiedPoints = info.occupiedPoints;
+      this.occupiedPointsArray = info.occupiedPointsArray;
     }
 
     this() {
@@ -136,6 +136,16 @@ class GameInfo {
         }
       }
     }
+    
+    int get(in int x, in int y) const pure @safe nothrow {
+      Point p = Point(x, y);
+      foreach (r; occupiedPointsArray) {
+        if (r.key == p) {
+          return r.val;
+        }
+      }
+      return this.field[y][x];
+    }
 
     bool isValid(int action) const pure nothrow @safe {
       immutable me = this.samuraiInfo[this.weapon];
@@ -157,9 +167,7 @@ class GameInfo {
               || y < 0 || this.height <= y) {
             return false;
           }
-          if (me.hidden == 1 && ((Point(x, y) in this.occupiedPoints) ?
-            this.occupiedPoints[Point(x, y)]
-            : this.field[y][x]) >= 3) {
+          if (me.hidden == 1 && get(x, y) >= 3) {
             return false;
           }
           foreach (i, s; this.samuraiInfo) {
@@ -179,9 +187,7 @@ class GameInfo {
           if (me.hidden == 1) {
             return false;
           }
-          if (((Point(x, y) in this.occupiedPoints) ?
-            this.occupiedPoints[Point(x, y)]
-            : this.field[y][x]) >= 3) {
+          if (get(x, y) >= 3) {
             return false;
           }
           return true;
@@ -215,11 +221,11 @@ class GameInfo {
       }
     }
 
-    void occupy(int dir) @trusted {
+    void occupy(int dir) pure @safe {
       const fieldDup = this.field;
       // this.field = this.field.map!(a => a.dup).array;
       const field = this.field;
-      this.occupiedPoints = this.occupiedPoints.dup;
+      this.occupiedPointsArray = this.occupiedPointsArray.dup;
 
       occupyCount = 0;
       playerKill = 0;
@@ -284,7 +290,7 @@ class GameInfo {
                 }
               }
               // field[ny][nx] = this.weapon;
-              this.occupiedPoints[Point(nx, ny)] = this.weapon;
+              this.occupiedPointsArray ~= Panel(Point(nx, ny), this.weapon);
 
               enum ofs = [
                 [0, 1],
@@ -323,7 +329,7 @@ class GameInfo {
       groupLevel = cast(double) groupCount / size[this.weapon];
     }
 
-    void doAction(int action) @trusted {
+    void doAction(int action) pure @safe {
       assert (isValid(action));
       auto me = this.samuraiInfo[this.weapon];
       int curX = me.curX;
@@ -634,8 +640,12 @@ class GameInfo {
     int[3] nextAITurn2() const pure @safe nothrow {
       return NEXT_AI_TURN_LUT[this.turn % 12];
     }
-    int[Point] getOccupiedPoints() @trusted {
-      return occupiedPoints.dup;
+    void paintUsingHistory() pure @safe nothrow {
+      this.field = this.field.map!(a => a.dup).array;
+      foreach(panel; occupiedPointsArray) {
+        this.field[panel.key.y][panel.key.x] = panel.val;
+      }
+      occupiedPointsArray = occupiedPointsArray.init;
     }
  private:
     int occupyCount;
@@ -648,7 +658,8 @@ class GameInfo {
     Point[][6] probPlaces;
     bool isAttackContain;
     bool[3] isKilled;
-    int[Point] occupiedPoints;
+    alias Tuple!(Point, "key", int, "val") Panel;
+    Panel[] occupiedPointsArray;
 
     string[] read() {
       string line = "";
