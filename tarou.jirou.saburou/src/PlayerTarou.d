@@ -270,11 +270,11 @@ class PlayerTarou : Player {
     }
 
   public:
-    void setDup(in GameInfo info) {
+    void setDup(in GameInfo info) pure @safe {
       fieldDup = info.field.map!(a => a.dup).array;
       samuraiDup = info.samuraiInfo.dup;
     }
-    override void play(GameInfo info) {
+    override void play(GameInfo info) @trusted {
       debug {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon);
       }
