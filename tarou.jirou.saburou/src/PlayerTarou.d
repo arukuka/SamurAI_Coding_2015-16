@@ -200,7 +200,7 @@ class PlayerTarou : Player {
       }
     }
 
-    void plan2(HistoryTree root) pure @trusted
+    void plan2(HistoryTree root) @trusted
     {
       auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
       Node atom = {
