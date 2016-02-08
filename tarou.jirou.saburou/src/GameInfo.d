@@ -215,7 +215,7 @@ class GameInfo {
       }
     }
 
-    void occupy(int dir) pure @safe {
+    void occupy(int dir) @trusted {
       const fieldDup = this.field;
       // this.field = this.field.map!(a => a.dup).array;
       const field = this.field;
@@ -323,7 +323,7 @@ class GameInfo {
       groupLevel = cast(double) groupCount / size[this.weapon];
     }
 
-    void doAction(int action) pure @safe {
+    void doAction(int action) @trusted{
       assert (isValid(action));
       auto me = this.samuraiInfo[this.weapon];
       int curX = me.curX;
