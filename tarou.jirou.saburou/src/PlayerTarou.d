@@ -200,6 +200,13 @@ class PlayerTarou : Player {
       }
     }
 
+    // attack, hidden, height, width : power
+    int[13][2][20][20] done;
+    void done_init() pure @trusted nothrow
+    {
+      import core.stdc.string : memset;
+      memset(&done, -1, int.sizeof * 20 * 20 * 13 * 2);
+    }
     void plan2(HistoryTree root) pure @trusted
     {
       auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
@@ -213,17 +220,7 @@ class PlayerTarou : Player {
         stderr.writeln("-- plan2 --");
         stderr.writeln = root.getActions();
       }
-      // attack, hidden, height, width : power
-      int[5][2][20][20] done;
-      for (int x = 0; x < 20; ++x) {
-        for (int y = 0; y < 20; ++y) {
-          for (int i = 0; i < 2; ++i) {
-            for (int j = 0; j < 5; ++j) {
-              done[x][y][i][j] = -1;
-            }
-          }
-        }
-      }
+      done_init();
       auto me = root.info.samuraiInfo[root.info.weapon];
       done[me.curX][me.curY][me.hidden][0] = MAX_POWER;
       while (queue.length) {
@@ -238,10 +235,13 @@ class PlayerTarou : Player {
             GameInfo next = new GameInfo(node.tree.getInfo());
             next.doAction(i);
             auto nme = next.samuraiInfo[next.weapon];
+            immutable attack_id = ((1 <= i && i <= 4) ?
+                        (nme.curX == me.curX && nme.curY == me.curY) << 3 | i
+                        : 0);
             if (node.cost - COST[i]
                 <= done[nme.curX][nme.curY]
                     [nme.hidden]
-                    [node.attack | ((1 <= i && i <= 4) ? i : 0)]
+                    [node.attack | attack_id]
                 ) {
               continue;
             }
@@ -252,14 +252,14 @@ class PlayerTarou : Player {
 
             done[nme.curX][nme.curY]
                     [nme.hidden]
-                    [node.attack | ((1 <= i && i <= 4) ? i : 0)]
+                    [node.attack | attack_id]
                 = node.cost - COST[i];
 
             HistoryTree child = new HistoryTree(node.tree, next, i);
             node.tree.add(child);
             Node nnode = {
               node.cost - COST[i],
-              node.attack | ((1 <= i && i <= 4) ? i : 0),
+              node.attack | attack_id,
               child
             };
 
@@ -268,6 +268,72 @@ class PlayerTarou : Player {
         }
       }
     }
+    void next_plan(HistoryTree root) pure @trusted
+    {
+      auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
+      Node atom = {
+        MAX_POWER,
+        0,
+        root
+      };
+      queue.insert(atom);
+      debug {
+        stderr.writeln("-- plan2 --");
+        stderr.writeln = root.getActions();
+      }
+      done_init();
+      auto me = root.info.samuraiInfo[root.info.weapon];
+      done[me.curX][me.curY][me.hidden][0] = MAX_POWER;
+      while (queue.length) {
+        Node node = queue.front();
+        queue.removeFront();
+        debug {
+          stderr.writeln("\t", node.cost, node.tree.getActions());
+        }
+        
+        if (node.attack > 0) {
+          continue;
+        }
+
+        for (int i = 1; i < COST.length; ++i) {
+          if (COST[i] <= node.cost && node.tree.getInfo().isValid(i)) {
+            GameInfo next = new GameInfo(node.tree.getInfo());
+            next.doAction(i);
+            auto nme = next.samuraiInfo[next.weapon];
+            immutable attack_id = ((1 <= i && i <= 4) ?
+                        (nme.curX == me.curX && nme.curY == me.curY) << 3 | i
+                        : 0);
+            if (node.cost - COST[i]
+                <= done[nme.curX][nme.curY]
+                    [nme.hidden]
+                    [node.attack | attack_id]
+                ) {
+              continue;
+            }
+
+            debug {
+              stderr.writeln("\t\t", i, " -> ", node.cost - COST[i]);
+            }
+
+            done[nme.curX][nme.curY]
+                    [nme.hidden]
+                    [node.attack | attack_id]
+                = node.cost - COST[i];
+
+            HistoryTree child = new HistoryTree(node.tree, next, i);
+            node.tree.add(child);
+            Node nnode = {
+              node.cost - COST[i],
+              node.attack | attack_id,
+              child
+            };
+
+            queue.insert(nnode);
+          }
+        }
+      }
+    }
+
 
   public:
     void setDup(in GameInfo info) pure @safe {
@@ -427,9 +493,8 @@ class PlayerTarou : Player {
       int i = 0;
       //next UNCO-de
       foreach (next; histories) {
-        next.info.paintUsingHistory();
         HistoryTree next_root = new HistoryTree(null, next.info, 0);
-        plan2(next_root);
+        next_plan(next_root);
         auto next_histories = next_root.collect();
 
         double[] next_roulette = new double[next_histories.length];

@@ -252,6 +252,14 @@ class GameInfo {
         [1, 2, 0, 1, 0],
         [0, -1, 1, 1, 1, -1, 0]
       ];
+      int[2] scores;
+      for (int s = 0; s < 2; ++s) {
+        for (int j = 0; j < 3; ++j) {
+          scores[s] += this.paints[j + s * 3];
+        }
+      }
+      int rem = this.width * this.height - (scores[0] + scores[1]);
+      scores[1] += rem;
       for (int i = 0; i < size[this.weapon]; ++i) {
         auto pos = GameInfo.rotate(dir, ox[this.weapon][i], oy[this.weapon][i]);
         int nx = curX + pos.x;
@@ -262,29 +270,21 @@ class GameInfo {
             isHome |= s.homeX == nx && s.homeY == ny;
           }
           if (!isHome) {
-            if (field[ny][nx] != this.weapon) {
-              if (field[ny][nx] >= 3) {
-                if (field[ny][nx] < 6) {
+            if (get(nx, ny) != this.weapon) {
+              if (get(nx, ny) >= 3) {
+                if (get(nx, ny) < 6) {
                   ++usurpCount;
                 }
-                if (field[ny][nx] >= 8) {
+                if (get(nx, ny) >= 8) {
                   ++occupyCount;
                 }
               } else {
                 ++selfCount;
               }
-              if (field[ny][nx] < 6) {
-                int[2] scores;
-                for (int s = 0; s < 2; ++s) {
-                  for (int j = 0; j < 3; ++j) {
-                    scores[s] += this.paints[j + s * 3];
-                  }
-                }
-                int rem = this.width * this.height - (scores[0] + scores[1]);
-                scores[1] += rem;
+              if (get(nx, ny) < 6) {
                 if (scores[0] * 2 > scores[1] * 3
-                    && (this.samuraiInfo[field[ny][nx]].score >= this.samuraiInfo[this.weapon].score
-                      || this.paints[field[ny][nx]] >= this.paints[this.weapon])
+                    && (this.samuraiInfo[get(nx, ny)].score >= this.samuraiInfo[this.weapon].score
+                      || this.paints[get(nx, ny)] >= this.paints[this.weapon])
                     ) {
                   ++fightCount;
                 }
@@ -640,7 +640,10 @@ class GameInfo {
     int[3] nextAITurn2() const pure @safe nothrow {
       return NEXT_AI_TURN_LUT[this.turn % 12];
     }
-    void paintUsingHistory() pure @safe nothrow {
+    void paintUsingHistory() pure @safe {
+      if (occupiedPointsArray.length == 0) {
+        return;
+      }
       this.field = this.field.map!(a => a.dup).array;
       foreach(panel; occupiedPointsArray) {
         this.field[panel.key.y][panel.key.x] = panel.val;
