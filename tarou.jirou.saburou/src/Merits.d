@@ -19,6 +19,7 @@ immutable class Merits {
     immutable double krnt; // killing rival who is enemy w/ same weapon at next turn
     immutable double tchd; // has hidden tactically
     immutable double land; // making safe land
+    immutable double mvat; // moved after attack
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -35,6 +36,7 @@ immutable class Merits {
         double krnt = 0;
         double tchd = 0;
         double land = 0;
+        double mvat = 0;
 
       public:
       pure:
@@ -96,6 +98,10 @@ immutable class Merits {
           this.land = land;
           return this;
         }
+        MeritsBuilder setMvat(double mvat) {
+          this.mvat = mvat;
+          return this;
+        }
     }
 
   private:
@@ -113,6 +119,7 @@ immutable class Merits {
       this.krnt = mb.krnt;
       this.tchd = mb.tchd;
       this.land = mb.land;
+      this.mvat = mb.mvat;
     }
 }
 

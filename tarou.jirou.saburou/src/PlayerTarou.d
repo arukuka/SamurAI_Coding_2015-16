@@ -45,6 +45,7 @@ class PlayerTarou : Player {
         .setFght(5)
         .setGrup(3)
         .setTchd(100)
+        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -58,6 +59,7 @@ class PlayerTarou : Player {
         .setFght(5)
         .setTchd(100)
         .setLand(20)
+        .setMvat(22)
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -71,6 +73,7 @@ class PlayerTarou : Player {
         .setFght(5)
         .setGrup(3)
         .setTchd(100)
+        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
       SPEAR_MERITS,
@@ -293,6 +296,9 @@ class PlayerTarou : Player {
         }
         
         if (node.attack > 0) {
+          continue;
+        }
+        if (node.cost < 4) {
           continue;
         }
 

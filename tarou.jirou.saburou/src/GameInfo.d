@@ -64,6 +64,7 @@ class GameInfo {
       this.probPlaces = info.probPlaces;
 
       this.isAttackContain = info.isAttackContain;
+      this.moveAfterAttack = info.moveAfterAttack;
       this.isKilled = info.isKilled;
       
       this.occupiedPointsArray = info.occupiedPointsArray;
@@ -104,6 +105,7 @@ class GameInfo {
       this.paints = 0;
 
       this.isAttackContain = false;
+      this.moveAfterAttack = false;
       this.isKilled = false;
 
       0.writeln;
@@ -334,6 +336,10 @@ class GameInfo {
       auto me = this.samuraiInfo[this.weapon];
       int curX = me.curX;
       int curY = me.curY;
+      
+      if (isAttackContain && 5 <= action && action <= 8) {
+        moveAfterAttack = true;
+      }
 
       final switch(action) {
         case 1, 2, 3, 4:
@@ -368,7 +374,8 @@ class GameInfo {
           + this.centerLevel() * m.midd
           + this.hasKilledRivalAtNextTurn() * m.krnt
           + this.hasHiddenTactically() * m.tchd
-          + this.isInSafeLand() * m.land;
+          + this.isInSafeLand() * m.land
+          + this.moveAfterAttack * m.mvat;
     }
 
     deprecated
@@ -445,7 +452,7 @@ class GameInfo {
       immutable int dy = Math.abs(rv.y - me.y);
       final switch(idx) {
         case 3:
-          return (dx + dy) == 6 || min(dx, dy) == 2;
+          return min(dx, dy) == 2;
         case 4:
           return (dx + dy) == 4;
         case 5:
@@ -688,6 +695,7 @@ class GameInfo {
     int[6] paints;
     Point[][6] probPlaces;
     bool isAttackContain;
+    bool moveAfterAttack;
     bool[3] isKilled;
     alias Tuple!(Point, "key", int, "val") Panel;
     Panel[] occupiedPointsArray;
