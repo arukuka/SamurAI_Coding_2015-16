@@ -18,6 +18,7 @@ immutable class Merits {
     immutable double grup; // occupying with grouping
     immutable double krnt; // killing rival who is enemy w/ same weapon at next turn
     immutable double tchd; // has hidden tactically
+    immutable double land; // making safe land
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -33,6 +34,7 @@ immutable class Merits {
         double grup = 0;
         double krnt = 0;
         double tchd = 0;
+        double land = 0;
 
       public:
       pure:
@@ -90,6 +92,10 @@ immutable class Merits {
           this.tchd = tchd;
           return this;
         }
+        MeritsBuilder setLand(double land) {
+          this.land = land;
+          return this;
+        }
     }
 
   private:
@@ -106,6 +112,7 @@ immutable class Merits {
       this.grup = mb.grup;
       this.krnt = mb.krnt;
       this.tchd = mb.tchd;
+      this.land = mb.land;
     }
 }
 

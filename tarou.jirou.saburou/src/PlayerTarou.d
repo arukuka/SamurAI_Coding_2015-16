@@ -57,6 +57,7 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setFght(5)
         .setTchd(100)
+        .setLand(50)
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)

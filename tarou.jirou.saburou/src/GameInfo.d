@@ -367,7 +367,8 @@ class GameInfo {
           + this.deployLevel() * m.depl
           + this.centerLevel() * m.midd
           + this.hasKilledRivalAtNextTurn() * m.krnt
-          + this.hasHiddenTactically() * m.tchd;
+          + this.hasHiddenTactically() * m.tchd
+          + this.isInSafeLand() * m.land;
     }
 
     deprecated
@@ -599,6 +600,33 @@ class GameInfo {
           continue;
         }
         flag |= isSafeLimit(mep, sip, i);
+      }
+      return flag;
+    }
+    bool isInSafeLand() const pure nothrow @safe {
+      const SamuraiInfo me = this.samuraiInfo[this.weapon];
+      if (isAttackContain || me.hidden != 1) {
+        return false;
+      }
+      enum ofs = [
+        [0, 1],
+        [1, 0],
+        [-1, 0],
+        [0, -1],
+      ];
+      immutable mep = Point(me.curX, me.curY);
+      bool flag = true;
+      foreach (dp; ofs) {
+        if (!flag) {
+          break;
+        }
+        int nx = dp[0] + mep.x;
+        int ny = dp[1] + mep.y;
+        if (nx < 0 || this.width <= nx || ny < 0 || this.height <= ny) {
+          continue;
+        }
+        int v = get(nx, ny);
+        flag &= !(3 <= v && v < 6);
       }
       return flag;
     }
