@@ -49,7 +49,7 @@ class PlayerTarou : Player {
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
-        .setKill(125)
+        .setKill(150)
         .setHide(0)
         .setSafe(200)
         .setUsur(20)
@@ -57,7 +57,7 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setFght(5)
         .setTchd(100)
-        .setLand(50)
+        .setLand(20)
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
