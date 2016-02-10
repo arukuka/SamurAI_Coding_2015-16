@@ -374,7 +374,7 @@ class GameInfo {
           + this.centerLevel() * m.midd
           + this.hasKilledRivalAtNextTurn() * m.krnt
           + this.hasHiddenTactically() * m.tchd
-          + this.isInSafeLand() * m.land
+          // + this.isInSafeLand() * m.land
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -452,11 +452,11 @@ class GameInfo {
       immutable int dy = Math.abs(rv.y - me.y);
       final switch(idx) {
         case 3:
-          return min(dx, dy) == 2;
+          return dx == 2 && dy == 2;
         case 4:
           return (dx + dy) == 4;
         case 5:
-          return (dx + dy) == 4 || max(dx, dy) == 3;
+          return (dx + dy) == 4 || (min(dx, dy) == 0 && max(dx, dy) == 3);
       }
     }
     deprecated
@@ -610,6 +610,7 @@ class GameInfo {
       }
       return flag;
     }
+    deprecated
     bool isInSafeLand() const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
       if (isAttackContain || me.hidden != 1) {

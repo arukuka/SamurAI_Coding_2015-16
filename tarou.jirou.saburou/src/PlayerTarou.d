@@ -43,9 +43,9 @@ class PlayerTarou : Player {
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
-        .setGrup(3)
+        .setGrup(5)
         .setTchd(100)
-        .setMvat(22)
+//        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -58,8 +58,8 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setFght(5)
         .setTchd(100)
-        .setLand(20)
-        .setMvat(22)
+//        .setLand(20)
+//        .setMvat(22)
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -71,9 +71,9 @@ class PlayerTarou : Player {
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
-        .setGrup(3)
+        .setGrup(5)
         .setTchd(100)
-        .setMvat(22)
+//        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
       SPEAR_MERITS,
@@ -99,7 +99,7 @@ class PlayerTarou : Player {
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
-        .setGrup(3)
+        .setGrup(5)
         .setKrnt(125)
         .build();
     static const Merits NEXT_SWORD_MERITS = new Merits.MeritsBuilder()
@@ -118,7 +118,7 @@ class PlayerTarou : Player {
         .setDepl(1)
         .setMidd(1)
         .setFght(5)
-        .setGrup(3)
+        .setGrup(5)
         .setKrnt(125)
         .build();
     static const Merits[3] NEXT_MERITS4WEAPON = [
@@ -298,12 +298,13 @@ class PlayerTarou : Player {
         if (node.attack > 0) {
           continue;
         }
-        if (node.cost < 4) {
-          continue;
-        }
 
         for (int i = 1; i < COST.length; ++i) {
           if (COST[i] <= node.cost && node.tree.getInfo().isValid(i)) {
+            if (5 <= node.tree.action && node.tree.action <= 8
+                && 5 <= i && i <= 8) {
+                continue;
+            }
             GameInfo next = new GameInfo(node.tree.getInfo());
             next.doAction(i);
             auto nme = next.samuraiInfo[next.weapon];
