@@ -344,8 +344,8 @@ class PlayerTarou : Player {
 
     ProfitSharingVQ agent;
   public:
-    this(int weapon, int side) {
-      agent = new ProfitSharingVQ(weapon, side);
+    this(int weapon, int side, string[] args) {
+      agent = new ProfitSharingVQ(weapon, side, args);
       agent.evapolate();
     }
     void setDup(in GameInfo info) pure @safe {

@@ -16,14 +16,15 @@ class ProfitSharingVQ {
     immutable int weapon;
     immutable int side;
     
-    enum IS_LEARNING = true;
+    enum IS_LEARNING = false;
     enum USE_FILE_FLAG = true;
   public:
-    this(int weapon, int side) {
+    this(int weapon, int side, string[] args) {
       this.weapon = weapon;
       this.side = side;
       static if(USE_FILE_FLAG) {
-        string filename = format("Q%d.csv", weapon);
+        string filename = args.length == 1 ? format("Q%d.csv", weapon)
+                : args[weapon + 1];
         if (exists(filename)) {
           stderr.writeln("[DEBUG]: reading Q value setting..." ~ filename);
           auto fp = new File(filename, "r");
@@ -94,7 +95,7 @@ class ProfitSharingVQ {
     }
     
     void save() const {
-      static if(USE_FILE_FLAG) {
+      static if(IS_LEARNING) {
         string filename = format("Q%d.csv", weapon);
         auto fp = new File(filename, "w");
         for (int i = 0; i < 180000; i ++) {

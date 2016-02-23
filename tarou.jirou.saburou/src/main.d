@@ -2,10 +2,10 @@ import samurai;
 
 import std.stdio;
 
-void main()
+void main(string[] args)
 {
   GameInfo info = new GameInfo();
-  PlayerTarou p = new PlayerTarou(info.weapon, info.side);
+  PlayerTarou p = new PlayerTarou(info.weapon, info.side, args);
 
   while (1) {
     info.readTurnInfo();
