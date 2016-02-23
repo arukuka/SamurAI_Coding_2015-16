@@ -262,6 +262,7 @@ class GameInfo {
       }
       int rem = this.width * this.height - (scores[0] + scores[1]);
       scores[1] += rem;
+      Panel[] painted;
       for (int i = 0; i < size[this.weapon]; ++i) {
         auto pos = GameInfo.rotate(dir, ox[this.weapon][i], oy[this.weapon][i]);
         int nx = curX + pos.x;
@@ -292,7 +293,8 @@ class GameInfo {
                 }
               }
               // field[ny][nx] = this.weapon;
-              this.occupiedPointsArray ~= Panel(Point(nx, ny), this.weapon);
+              // this.occupiedPointsArray ~= Panel(Point(nx, ny), this.weapon);
+              painted ~= Panel(Point(nx, ny), this.weapon);
 
               enum ofs = [
                 [0, 1],
@@ -329,6 +331,8 @@ class GameInfo {
       }
 
       groupLevel = cast(double) groupCount / size[this.weapon];
+      
+      this.occupiedPointsArray ~= painted;
     }
 
     void doAction(int action) pure @safe {

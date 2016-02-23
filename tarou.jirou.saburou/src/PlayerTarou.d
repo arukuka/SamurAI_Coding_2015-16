@@ -25,7 +25,7 @@ class PlayerTarou : Player {
     static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
-        .setKill(125)
+        .setKill(150)
         .setHide(0)
         .setSafe(200)
         .setUsur(20)
@@ -36,7 +36,7 @@ class PlayerTarou : Player {
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
-        .setKill(125)
+        .setKill(150)
         .setHide(0)
         .setSafe(200)
         .setUsur(20)
@@ -64,7 +64,7 @@ class PlayerTarou : Player {
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(3)
-        .setKill(125)
+        .setKill(150)
         .setHide(0)
         .setSafe(200)
         .setUsur(20)
@@ -82,7 +82,7 @@ class PlayerTarou : Player {
     ];
 
     static const Merits NEXT_DEFAULT_MERITS = new Merits.MeritsBuilder()
-        .setTerr(25)
+        .setTerr(20)
         .setSelf(3)
         .setKill(0)
         .setHide(0)
@@ -409,7 +409,7 @@ class PlayerTarou : Player {
         int[6] diffPrevCount;
         for (int y = 0; y < info.height; ++y) {
           for (int x = 0; x < info.width; ++x) {
-            if (info.field[y][x] != fieldDup[y][x] && fieldDup[y][x] != 9) {
+            if (info.field[y][x] != fieldDup[y][x] && fieldDup[y][x] != 9 && info.field[y][x] != 9) {
               int v = info.field[y][x];
               if (3 <= v && v < 6) {
                 ++diffPrevCount[v];
@@ -486,6 +486,10 @@ class PlayerTarou : Player {
             } else {
               info.setProbPlaces(i, arr);
               probPointDup[i] = arr;
+            }
+          } else {
+            debug(2) {
+              stderr.writeln("I see ", i, " : (", si.curX, ", ", si.curY, ")");
             }
           }
         }
