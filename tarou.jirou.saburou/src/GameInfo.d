@@ -690,6 +690,16 @@ class GameInfo {
       }
       occupiedPointsArray = occupiedPointsArray.init;
     }
+    
+    bool isLastTurn(int turn) {
+      int mid = this.weapon + 3 * this.side;
+      foreach_reverse(idx, id; TURNS_RULE) {
+        if (id == mid) {
+          return turn == this.turns - TURNS_RULE.length + idx;
+        }
+      }
+      return false;
+    }
  private:
     int occupyCount;
     int playerKill;

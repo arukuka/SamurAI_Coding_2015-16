@@ -8,4 +8,5 @@ public import samurai.PlayerTarou;
 public import samurai.container.rbtree;
 public import samurai.container.util;
 public import samurai.meta;
+public import samurai.ProfitSharingVQ;
 

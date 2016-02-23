@@ -342,15 +342,35 @@ class PlayerTarou : Player {
       }
     }
 
-
+    ProfitSharingVQ agent;
   public:
+    this(int weapon, int side) {
+      agent = new ProfitSharingVQ(weapon, side);
+      agent.evapolate();
+    }
     void setDup(in GameInfo info) pure @safe {
       fieldDup = info.field.map!(a => a.dup).array;
       samuraiDup = info.samuraiInfo.dup;
     }
+    void you_are_dead_already() pure @safe nothrow {
+      agent.reward();
+    }
+    bool is_movable_next_turn(const GameInfo info) const pure @safe nothrow {
+      int mid = info.weapon + 3 * info.side;
+      int idx = info.turn % GameInfo.TURNS_RULE.length;
+      for (int i = 1; i < GameInfo.TURNS_RULE.length; ++i) {
+        if (GameInfo.TURNS_RULE[(idx + i) % GameInfo.TURNS_RULE.length] == mid) {
+          return i >= info.curePeriod;
+        }
+      }
+      return false;
+    }
     override void play(GameInfo info) @trusted {
       debug {
-        stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon);
+        stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn(info.turn));
+      }
+      if (info.isLastTurn(info.turn)) {
+        agent.save();
       }
 
       if (rivalPointDupFlag) {
@@ -505,6 +525,8 @@ class PlayerTarou : Player {
       int i = 0;
       //next UNCO-de
       foreach (next; histories) {
+        immutable int state = ProfitSharingVQ.encodeState(info, next.info);
+        immutable int action = ProfitSharingVQ.encodeAction(next.getActions());
         HistoryTree next_root = new HistoryTree(null, next.info, 0);
         next_plan(next_root);
         auto next_histories = next_root.collect();
@@ -521,7 +543,8 @@ class PlayerTarou : Player {
                     - next_roulette.assumeSorted.upperBound(uniform(0.0, next_accum)).length;
 
         double v = Math.exp(next.getInfo().score(MERITS4WEAPON[info.weapon])
-                    + next_histories[idx].getInfo().score(NEXT_MERITS4WEAPON[info.weapon]));
+                    + next_histories[idx].getInfo().score(NEXT_MERITS4WEAPON[info.weapon])
+                    - agent.get(state, action));
         accum += v;
         roulette[i++] = accum;
       }
@@ -539,6 +562,10 @@ class PlayerTarou : Player {
       }
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       stdout.flush;
+      
+      immutable int state = ProfitSharingVQ.encodeState(info, best);
+      immutable int action = ProfitSharingVQ.encodeAction(bestActions);
+      agent.enqueue(state, action);
 
       best.paintUsingHistory();
       fieldDup = best.field.map!(a => a.dup).array;
