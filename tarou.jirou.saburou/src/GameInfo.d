@@ -548,23 +548,9 @@ class GameInfo {
         if (p.x != -1 && p.y != -1) {
           safe = min(safe, isSafe2(i, p) ? 1.0 : 0.0);
         } else {
-          immutable Point rh = Point(si.homeX, si.homeY);
-          ulong sum = probPlaces[i].length;
-          ulong cnt = 0;
-          if (probPlaces[i].find(rh).empty) {
-            ++sum;
-            if (isSafe2(i, rh)) {
-              ++cnt;
-            }
-          }
-          assert (sum > 0);
           foreach (q; probPlaces[i]) {
-            if (isSafe2(i, q)) {
-              ++cnt;
-            }
+            safe = min(safe, isSafe2(i, q) ? 1.0 : 0.0);
           }
-          assert (cnt <= sum);
-          safe = min(safe, 0.75 + (cast(double)cnt / sum) * 0.25);
         }
       }
       return safe;
@@ -691,7 +677,7 @@ class GameInfo {
       occupiedPointsArray = occupiedPointsArray.init;
     }
     
-    bool isLastTurn(int turn) {
+    bool isLastTurn(int turn) const pure @safe nothrow {
       int mid = this.weapon + 3 * this.side;
       foreach_reverse(idx, id; TURNS_RULE) {
         if (id == mid) {
@@ -699,6 +685,9 @@ class GameInfo {
         }
       }
       return false;
+    }
+    bool haveEnemyIdea(int id) const pure @safe nothrow {
+      return samuraiInfo[id].curX == -1 && samuraiInfo[id].curY == -1 && probPlaces[id].length == 0;
     }
  private:
     int occupyCount;
