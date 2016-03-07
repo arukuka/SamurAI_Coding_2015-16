@@ -677,11 +677,11 @@ class GameInfo {
       occupiedPointsArray = occupiedPointsArray.init;
     }
     
-    bool isLastTurn(int turn) const pure @safe nothrow {
+    bool isLastTurn() const pure @safe nothrow {
       int mid = this.weapon + 3 * this.side;
       foreach_reverse(idx, id; TURNS_RULE) {
         if (id == mid) {
-          return turn == this.turns - TURNS_RULE.length + idx;
+          return this.turn == this.turns - TURNS_RULE.length + idx;
         }
       }
       return false;

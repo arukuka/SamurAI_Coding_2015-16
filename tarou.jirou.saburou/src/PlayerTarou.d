@@ -126,6 +126,11 @@ class PlayerTarou : Player {
       NEXT_SWORD_MERITS,
       NEXT_BATTLEAX_MERITS
     ];
+    static const Merits LAST_TURN_MERIT = new Merits.MeritsBuilder()
+        .setTerr(20)
+        .setUsur(25)
+        .setSelf(3)
+        .build();
 
     static class HistoryTree {
       private:
@@ -367,9 +372,9 @@ class PlayerTarou : Player {
     }
     override void play(GameInfo info) @trusted {
       debug {
-        stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn(info.turn));
+        stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn());
       }
-      if (info.isLastTurn(info.turn)) {
+      if (info.isLastTurn()) {
         agent.save();
       }
 
@@ -523,30 +528,38 @@ class PlayerTarou : Player {
       double[] roulette = new double[histories.length];
       double accum = 0.0;
       int i = 0;
-      //next UNCO-de
-      foreach (next; histories) {
-        immutable int state = ProfitSharingVQ.encodeState(info, next.info);
-        immutable int action = ProfitSharingVQ.encodeAction(next.getActions());
-        HistoryTree next_root = new HistoryTree(null, next.info, 0);
-        next_plan(next_root);
-        auto next_histories = next_root.collect();
-
-        double[] next_roulette = new double[next_histories.length];
-        double next_accum = 0.0;
-        int j = 0;
-        foreach (hist; next_histories) {
-          double v = Math.exp(hist.getInfo().score(NEXT_MERITS4WEAPON[info.weapon]));
-          next_accum += v;
-          next_roulette[j++] = next_accum;
+      if (info.isLastTurn()) {
+        foreach (next; histories) {
+          double v = Math.exp(next.getInfo().score(LAST_TURN_MERIT));
+          accum += v;
+          roulette[i++] = accum;
         }
-        auto idx = next_roulette.length
-                    - next_roulette.assumeSorted.upperBound(uniform(0.0, next_accum)).length;
+      } else {
+        //next UNCO-de
+        foreach (next; histories) {
+          immutable int state = ProfitSharingVQ.encodeState(info, next.info);
+          immutable int action = ProfitSharingVQ.encodeAction(next.getActions());
+          HistoryTree next_root = new HistoryTree(null, next.info, 0);
+          next_plan(next_root);
+          auto next_histories = next_root.collect();
 
-        double v = Math.exp(next.getInfo().score(MERITS4WEAPON[info.weapon])
-                    + next_histories[idx].getInfo().score(NEXT_MERITS4WEAPON[info.weapon])
-                    - agent.get(state, action));
-        accum += v;
-        roulette[i++] = accum;
+          double[] next_roulette = new double[next_histories.length];
+          double next_accum = 0.0;
+          int j = 0;
+          foreach (hist; next_histories) {
+            double v = Math.exp(hist.getInfo().score(NEXT_MERITS4WEAPON[info.weapon]));
+            next_accum += v;
+            next_roulette[j++] = next_accum;
+          }
+          auto idx = next_roulette.length
+                      - next_roulette.assumeSorted.upperBound(uniform(0.0, next_accum)).length;
+
+          double v = Math.exp(next.getInfo().score(MERITS4WEAPON[info.weapon])
+                      + next_histories[idx].getInfo().score(NEXT_MERITS4WEAPON[info.weapon])
+                      - agent.get(state, action));
+          accum += v;
+          roulette[i++] = accum;
+        }
       }
       debug {
         if (accum == double.infinity) {
