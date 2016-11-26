@@ -515,48 +515,33 @@ class PlayerTarou : Player {
 
       auto histories = root.collect();
 
-      double[] roulette = new double[histories.length];
-      double accum = 0.0;
-      int i = 0;
+      alias node = Tuple!(ulong, "index", double, "score");
+      node[] nodes = new node[histories.length];
       if (info.isLastTurn()) {
-        foreach (next; histories) {
+        foreach (i, next; histories) {
           double v = Math.exp(next.getInfo().score(LAST_TURN_MERIT));
-          accum += v;
-          roulette[i++] = accum;
+          nodes[i] = node(i, v);
         }
       } else {
         //next UNCO-de
-        foreach (next; histories) {
+        foreach (i, next; histories) {
           immutable int state = ProfitSharingVQ.encodeState(info, next.info);
           immutable int action = ProfitSharingVQ.encodeAction(next.getActions());
           HistoryTree next_root = new HistoryTree(null, next.info, 0);
           next_plan(next_root);
           auto next_histories = next_root.collect();
 
-          double[] next_roulette = new double[next_histories.length];
-          double next_accum = 0.0;
-          int j = 0;
-          foreach (hist; next_histories) {
-            double v = Math.exp(hist.getInfo().score(NEXT_MERITS4WEAPON[info.weapon]));
-            next_accum += v;
-            next_roulette[j++] = next_accum;
-          }
-          auto idx = next_roulette.length
-                      - next_roulette.assumeSorted.upperBound(uniform(0.0, next_accum)).length;
+          double next_max_score = next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[info.weapon])).reduce!max;
 
-          double v = Math.exp(next.getInfo().score(MERITS4WEAPON[info.weapon])
-                      + next_histories[idx].getInfo().score(NEXT_MERITS4WEAPON[info.weapon])
-                      - agent.get(state, action));
-          accum += v;
-          roulette[i++] = accum;
+          double v = next.getInfo().score(MERITS4WEAPON[info.weapon])
+                      + next_max_score
+                      - agent.get(state, action);
+          nodes[i] = node(i, v);
         }
       }
-      debug {
-        if (accum == double.infinity) {
-          stderr.writeln("accum goes infinite!");
-        }
-      }
-      auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
+      double max_score = nodes.map!(a => a.score).reduce!max;
+      auto bests = nodes.filter!(a => a.score == max_score).array;
+      auto idx = bests[uniform(0, bests.length)].index;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
       if (info.samuraiInfo[info.weapon].hidden == 0 && best.isValid(9)) {
