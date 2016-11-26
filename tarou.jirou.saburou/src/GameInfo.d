@@ -30,13 +30,25 @@ class GameInfo {
       [1, 1, 2],
       [1, 1, 0]
     ];
+    enum int[2][3][2] HOME_POSITION = [
+      [
+        [0, 0],
+        [0, 7],
+        [7, 0]
+      ],
+      [
+        [14, 14],
+        [14, 7],
+        [7, 14]
+      ]
+    ];
     int turns;
     int side;
     int weapon;
     int width, height;
     int maxCure;
     SamuraiInfo[PLAYER_NUM] samuraiInfo;
-    int turn, curePeriod;
+    int turn;
     int[][] field;
 
     this(GameInfo info) @safe pure {
@@ -48,7 +60,6 @@ class GameInfo {
       this.maxCure = info.maxCure;
       this.samuraiInfo = info.samuraiInfo.dup;
       this.turn = info.turn;
-      this.curePeriod = info.curePeriod;
 //      this.field = info.field.map!(a => a.dup).array;
       this.field = info.field;
 
@@ -69,30 +80,30 @@ class GameInfo {
       
       this.occupiedPointsArray = info.occupiedPointsArray;
     }
-
+    
     this() {
       string[] res = this.read();
 
-      this.turns   = res[0].to!int;
-      this.side    = res[1].to!int;
-      this.weapon  = res[2].to!int;
-      this.width   = res[3].to!int;
-      this.height  = res[4].to!int;
-      this.maxCure = res[5].to!int;
+      this.turns   = 96;
+      this.side    = res[0].to!int;
+      this.weapon  = 0;
+      this.width   = 15;
+      this.height  = 15;
+      this.maxCure = 18;
+      
+      stderr.writeln(this.side, " ", HOME_POSITION, " : ", HOME_POSITION[this.side]);
 
-      foreach(ref s; this.samuraiInfo) {
-        res = this.read();
-        s.homeX = res[0].to!int;
-        s.homeY = res[1].to!int;
-      }
-      foreach (ref s; this.samuraiInfo) {
-        res = this.read();
-        s.rank = res[0].to!int;
-        s.score = res[1].to!int;
+      foreach(i, ref s; this.samuraiInfo) {
+        if (i < 3) {
+          s.homeX = HOME_POSITION[this.side][i][0];
+          s.homeY = HOME_POSITION[this.side][i][1];
+        } else {
+          s.homeX = HOME_POSITION[1 - this.side][i - 3][0];
+          s.homeY = HOME_POSITION[1 - this.side][i - 3][1];
+        }
       }
 
       this.turn = 0;
-      this.curePeriod = 0;
       this.field = new int[][](this.height, this.width);
 
       this.occupyCount = 0;
@@ -121,14 +132,13 @@ class GameInfo {
 
       assert(turn >= 0);
 
-      res = this.read();
-      this.curePeriod = res[0].to!int;
-
       foreach (ref s; this.samuraiInfo)  {
         res = this.read();
         s.curX = res[0].to!int;
         s.curY = res[1].to!int;
-        s.hidden = res[2].to!int;
+        s.done = res[2].to!int == 1;
+        s.hidden = res[3].to!int;
+        s.curePeriod = res[4].to!int;
       }
 
       for (int i = 0; i < this.height; ++i) {
@@ -186,24 +196,19 @@ class GameInfo {
           return true;
         }
         case 9: {
-          if (me.hidden == 1) {
-            return false;
-          }
-          if (get(x, y) >= 3) {
-            return false;
-          }
-          return true;
-        }
-        case 10: {
-          if (me.hidden != 1) {
-            return false;
-          }
-          foreach (s; this.samuraiInfo) {
-            if (s.hidden != 1 && s.curX == x && s.curY == y) {
+          if (me.hidden == 0) {
+            if (get(x, y) >= 3) {
               return false;
             }
+            return true;
+          } else {
+            foreach (s; this.samuraiInfo) {
+              if (s.hidden != 1 && s.curX == x && s.curY == y) {
+                return false;
+              }
+            }
+            return true;
           }
-          return true;
         }
         default:
           return action == 0;
@@ -284,14 +289,6 @@ class GameInfo {
               } else {
                 ++selfCount;
               }
-              if (get(nx, ny) < 6) {
-                if (scores[0] * 2 > scores[1] * 3
-                    && (this.samuraiInfo[get(nx, ny)].score >= this.samuraiInfo[this.weapon].score
-                      || this.paints[get(nx, ny)] >= this.paints[this.weapon])
-                    ) {
-                  ++fightCount;
-                }
-              }
               // field[ny][nx] = this.weapon;
               // this.occupiedPointsArray ~= Panel(Point(nx, ny), this.weapon);
               painted ~= Panel(Point(nx, ny), this.weapon);
@@ -354,10 +351,7 @@ class GameInfo {
         case 7: --curY; break;
         case 8: --curX; break;
         case 9:
-          me.hidden = 1;
-          break;
-        case 10:
-          me.hidden = 0;
+          me.hidden = 1 - me.hidden;
           break;
       }
       me.curX = curX;
@@ -371,12 +365,12 @@ class GameInfo {
           + this.playerKill * m.kill
           + this.occupyCount * m.terr
           + this.usurpCount * m.usur
-          + this.fightCount * m.fght
+          // + this.fightCount * m.fght
           + this.groupLevel * m.grup
           + this.safeLevel() * m.safe
           + this.deployLevel() * m.depl
           + this.centerLevel() * m.midd
-          + this.hasKilledRivalAtNextTurn() * m.krnt
+          // + this.hasKilledRivalAtNextTurn() * m.krnt
           + this.hasHiddenTactically() * m.tchd
           // + this.isInSafeLand() * m.land
           + this.moveAfterAttack * m.mvat;
@@ -463,11 +457,11 @@ class GameInfo {
           return (dx + dy) == 4 || (min(dx, dy) == 0 && max(dx, dy) == 3);
       }
     }
-    deprecated
     bool isSafe(immutable int idx, immutable Point p) const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
       return GameInfo.isSafe(Point(me.curX, me.curY), p, idx);
     }
+    deprecated
     bool isSafe2(immutable int idx, immutable Point rvp) const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
       immutable mep = Point(me.curX, me.curY);
@@ -546,10 +540,10 @@ class GameInfo {
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
         if (p.x != -1 && p.y != -1) {
-          safe = min(safe, isSafe2(i, p) ? 1.0 : 0.0);
+          safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
         } else {
           foreach (q; probPlaces[i]) {
-            safe = min(safe, isSafe2(i, q) ? 1.0 : 0.0);
+            safe = min(safe, isSafe(i, q) ? 1.0 : 0.0);
           }
         }
       }
@@ -572,6 +566,7 @@ class GameInfo {
       double maxd = this.width / 2 + this.height / 2;
       return maxd - dist;
     }
+    deprecated
     bool hasKilledRivalAtNextTurn() const pure nothrow @safe {
       immutable int[3] turns = nextAITurn2();
       return isKilled[this.weapon] && turns[this.weapon] == 0;
@@ -582,7 +577,7 @@ class GameInfo {
         return false;
       }
       immutable mep = Point(me.curX, me.curY);
-      immutable int[3] turns = nextAITurn2();
+      // immutable int[3] turns = nextAITurn2();
       bool flag = false;
       for (int i = 3; i < 6; ++i) {
         const SamuraiInfo si = this.samuraiInfo[i];
@@ -593,9 +588,11 @@ class GameInfo {
         if (sip.x == si.homeX && sip.y == si.homeY) {
           continue;
         }
+        /+
         if (turns[i - 3] != 1) {
           continue;
         }
+        +/
         flag |= isSafeLimit(mep, sip, i);
       }
       return flag;
@@ -663,6 +660,7 @@ class GameInfo {
       assert (res == NEXT_AI_TURN_LUT[this.turn % 12]);
       return res;
     }
+    deprecated
     int[3] nextAITurn2() const pure @safe nothrow {
       return NEXT_AI_TURN_LUT[this.turn % 12];
     }

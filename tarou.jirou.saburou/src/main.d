@@ -9,18 +9,11 @@ void main(string[] args)
 
   while (1) {
     info.readTurnInfo();
-    writeln("# Turn ", info.turn);
-    if (info.curePeriod != 0) {
-      if (p.is_movable_next_turn(info)) {
-        p.setDup(info);
-        p.you_are_dead_already();
-      }
-      0.writeln;
-    } else {
-      p.play(info);
-      0.writeln;
-    }
+    stderr.writeln("# Turn ", info.turn);
+    p.play(info);
+    0.writeln;
     stdout.flush;
+    info.weapon = (info.weapon + 1) % 3;
   }
 }
 

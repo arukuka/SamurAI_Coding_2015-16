@@ -4,6 +4,8 @@ struct SamuraiInfo {
   public:
     int homeX, homeY;
     int curX, curY;
-    int rank, score, hidden;
+    bool done;
+    int hidden;
+    int curePeriod;
 }
 

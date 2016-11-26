@@ -12,7 +12,7 @@ import std.format;
 
 class PlayerTarou : Player {
   private:
-    enum COST = [0, 4, 4, 4, 4, 2, 2, 2, 2, 1, 1];
+    enum COST = [0, 4, 4, 4, 4, 2, 2, 2, 2, 1];
     enum MAX_POWER = 7;
 
     int[][] latestField = null;
@@ -24,7 +24,7 @@ class PlayerTarou : Player {
 
     static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
-        .setSelf(3)
+        .setSelf(-5)
         .setKill(150)
         .setHide(0)
         .setSafe(200)
@@ -35,7 +35,7 @@ class PlayerTarou : Player {
         .build();
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
-        .setSelf(3)
+        .setSelf(-5)
         .setKill(150)
         .setHide(0)
         .setSafe(200)
@@ -49,7 +49,7 @@ class PlayerTarou : Player {
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
-        .setSelf(3)
+        .setSelf(-5)
         .setKill(150)
         .setHide(0)
         .setSafe(200)
@@ -63,7 +63,7 @@ class PlayerTarou : Player {
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
-        .setSelf(3)
+        .setSelf(-5)
         .setKill(150)
         .setHide(0)
         .setSafe(200)
@@ -83,7 +83,7 @@ class PlayerTarou : Player {
 
     static const Merits NEXT_DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(20)
-        .setSelf(3)
+        .setSelf(-5)
         .setKill(0)
         .setHide(0)
         .setSafe(0)
@@ -94,7 +94,7 @@ class PlayerTarou : Player {
         .build();
     static const Merits NEXT_SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
-        .setSelf(3)
+        .setSelf(-5)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
@@ -104,7 +104,7 @@ class PlayerTarou : Player {
         .build();
     static const Merits NEXT_SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
-        .setSelf(3)
+        .setSelf(-5)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
@@ -113,7 +113,7 @@ class PlayerTarou : Player {
         .build();
     static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
-        .setSelf(3)
+        .setSelf(-5)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
@@ -129,7 +129,7 @@ class PlayerTarou : Player {
     static const Merits LAST_TURN_MERIT = new Merits.MeritsBuilder()
         .setTerr(20)
         .setUsur(25)
-        .setSelf(3)
+        .setSelf(-5)
         .build();
 
     static class HistoryTree {
@@ -360,16 +360,6 @@ class PlayerTarou : Player {
     void you_are_dead_already() pure @safe nothrow {
       agent.reward();
     }
-    bool is_movable_next_turn(const GameInfo info) const pure @safe nothrow {
-      int mid = info.weapon + 3 * info.side;
-      int idx = info.turn % GameInfo.TURNS_RULE.length;
-      for (int i = 1; i < GameInfo.TURNS_RULE.length; ++i) {
-        if (GameInfo.TURNS_RULE[(idx + i) % GameInfo.TURNS_RULE.length] == mid) {
-          return i >= info.curePeriod;
-        }
-      }
-      return false;
-    }
     override void play(GameInfo info) @trusted {
       debug {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn());
@@ -569,12 +559,12 @@ class PlayerTarou : Player {
       auto idx = roulette.length - roulette.assumeSorted.upperBound(uniform(0.0, accum)).length;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
-      if (best.isValid(9)) {
+      if (info.samuraiInfo[info.weapon].hidden == 0 && best.isValid(9)) {
         best.doAction(9);
         bestActions ~= 9;
       }
+      info.weapon.writeln;
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
-      stdout.flush;
       
       immutable int state = ProfitSharingVQ.encodeState(info, best);
       immutable int action = ProfitSharingVQ.encodeAction(bestActions);
@@ -583,14 +573,8 @@ class PlayerTarou : Player {
       best.paintUsingHistory();
       fieldDup = best.field.map!(a => a.dup).array;
       samuraiDup = best.samuraiInfo.dup;
-      if (best.nextAITurn2()[best.weapon] == 0) {
-        auto rival = best.samuraiInfo[best.weapon + 3];
-        rivalPointDup = Point(rival.curX, rival.curY);
-        rivalPointDupFlag = true;
-      } else {
-        rivalPointDup = Point(-1, -1);
-        rivalPointDupFlag = false;
-      }
+      rivalPointDup = Point(-1, -1);
+      rivalPointDupFlag = false;
     }
 }
 
