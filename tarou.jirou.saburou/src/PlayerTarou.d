@@ -513,17 +513,28 @@ class PlayerTarou : Player {
       info.setRivalInfo(paintCount);
 
       search(info);
-
-      HistoryTree root = new HistoryTree(null, info, 0);
-      plan2(root);
-
-      auto histories = root.collect();
+      
+      HistoryTree[] histories = HistoryTree[].init;
+      
+      for (int i = 0; i < 3; ++i) {
+        with (info.samuraiInfo[i]) {
+          if (done || curePeriod > 0) {
+            continue;
+          }
+        }
+        GameInfo jnfo = new GameInfo(info);
+        jnfo.weapon = i;
+        HistoryTree root = new HistoryTree(null, jnfo, 0);
+        plan2(root);
+        
+        histories ~= root.collect();
+      }
 
       alias node = Tuple!(ulong, "index", double, "score");
       node[] nodes = new node[histories.length];
       if (info.isLastTurn()) {
         foreach (i, next; histories) {
-          double v = Math.exp(next.getInfo().score(LAST_TURN_MERIT));
+          double v = next.getInfo().score(LAST_TURN_MERIT);
           nodes[i] = node(i, v);
         }
       } else {
@@ -535,7 +546,7 @@ class PlayerTarou : Player {
           next_plan(next_root);
           auto next_histories = next_root.collect();
 
-          double next_max_score = next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[info.weapon])).reduce!max;
+          double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[info.weapon])));
 
           double v = next.getInfo().score(MERITS4WEAPON[info.weapon])
                       + next_max_score
@@ -552,7 +563,7 @@ class PlayerTarou : Player {
         best.doAction(9);
         bestActions ~= 9;
       }
-      info.weapon.writeln;
+      best.weapon.writeln;
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       
       immutable int state = ProfitSharingVQ.encodeState(info, best);
