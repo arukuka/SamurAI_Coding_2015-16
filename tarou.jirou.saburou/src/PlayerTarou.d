@@ -29,8 +29,6 @@ class PlayerTarou : Player {
         .setSafe(300)
         .setUsur(20)
         .setDepl(1)
-        .setMidd(1)
-        .setFght(5)
         .build();
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -39,9 +37,7 @@ class PlayerTarou : Player {
         .setHide(0)
         .setSafe(300)
         .setUsur(20)
-        .setDepl(1)
         .setMidd(1)
-        .setFght(5)
         .setGrup(5)
         .setTchd(100)
 //        .setMvat(22)
@@ -54,8 +50,6 @@ class PlayerTarou : Player {
         .setSafe(300)
         .setUsur(20)
         .setDepl(1)
-        .setMidd(1)
-        .setFght(5)
         .setTchd(100)
 //        .setLand(20)
 //        .setMvat(22)
@@ -68,8 +62,6 @@ class PlayerTarou : Player {
         .setSafe(300)
         .setUsur(20)
         .setDepl(1)
-        .setMidd(1)
-        .setFght(5)
         .setGrup(5)
         .setTchd(100)
 //        .setMvat(22)
@@ -95,9 +87,7 @@ class PlayerTarou : Player {
         .setTerr(25)
         .setSelf(-5)
         .setUsur(20)
-        .setDepl(1)
         .setMidd(1)
-        .setFght(5)
         .setGrup(5)
         .setKrnt(125)
         .build();
@@ -106,8 +96,6 @@ class PlayerTarou : Player {
         .setSelf(-5)
         .setUsur(20)
         .setDepl(1)
-        .setMidd(1)
-        .setFght(5)
         .setKrnt(125)
         .build();
     static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
@@ -115,8 +103,6 @@ class PlayerTarou : Player {
         .setSelf(-5)
         .setUsur(20)
         .setDepl(1)
-        .setMidd(1)
-        .setFght(5)
         .setGrup(5)
         .setKrnt(125)
         .build();
@@ -562,7 +548,7 @@ class PlayerTarou : Player {
       auto idx = bests[uniform(0, bests.length)].index;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
-      if (info.samuraiInfo[info.weapon].hidden == 0 && best.isValid(9)) {
+      if (best.samuraiInfo[best.weapon].hidden == 0 && best.isValid(9)) {
         best.doAction(9);
         bestActions ~= 9;
       }
@@ -576,6 +562,18 @@ class PlayerTarou : Player {
       best.paintUsingHistory();
       fieldDup = best.field.map!(a => a.dup).array;
       samuraiDup = best.samuraiInfo.dup;
+      
+      for (int i = 3; i < 6; ++i) {
+        if ((best.samuraiInfo[i].curX != -1 && best.samuraiInfo[i].curY != -1)
+        && best.samuraiInfo[i].curX != samuraiMemory[i].curX
+        && best.samuraiInfo[i].curY != samuraiMemory[i].curY ) {
+          samuraiMemory[i].curX = best.samuraiInfo[i].curX;
+          samuraiMemory[i].curY = best.samuraiInfo[i].curY;
+          debug {
+            stderr.writeln("\tmay killed so : ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+          }
+        }
+      }
     }
 }
 
