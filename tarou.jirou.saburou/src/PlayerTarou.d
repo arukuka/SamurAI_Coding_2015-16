@@ -16,18 +16,17 @@ class PlayerTarou : Player {
     enum MAX_POWER = 7;
 
     int[][] latestField = null;
+    SamuraiInfo[] samuraiMemory = null;
     int[][] fieldDup = null;
     SamuraiInfo[] samuraiDup = null;
     Point[][6] probPointDup;
-    Point rivalPointDup;
-    bool rivalPointDupFlag = false;
 
     static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
         .setKill(150)
         .setHide(0)
-        .setSafe(200)
+        .setSafe(300)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
@@ -38,7 +37,7 @@ class PlayerTarou : Player {
         .setSelf(-5)
         .setKill(150)
         .setHide(0)
-        .setSafe(200)
+        .setSafe(300)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
@@ -52,7 +51,7 @@ class PlayerTarou : Player {
         .setSelf(-5)
         .setKill(150)
         .setHide(0)
-        .setSafe(200)
+        .setSafe(300)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
@@ -66,7 +65,7 @@ class PlayerTarou : Player {
         .setSelf(-5)
         .setKill(150)
         .setHide(0)
-        .setSafe(200)
+        .setSafe(300)
         .setUsur(20)
         .setDepl(1)
         .setMidd(1)
@@ -225,9 +224,8 @@ class PlayerTarou : Player {
         root
       };
       queue.insert(atom);
-      debug {
+      debug(2) {
         stderr.writeln("-- plan2 --");
-        stderr.writeln = root.getActions();
       }
       done_init();
       auto me = root.info.samuraiInfo[root.info.weapon];
@@ -235,7 +233,7 @@ class PlayerTarou : Player {
       while (queue.length) {
         Node node = queue.front();
         queue.removeFront();
-        debug {
+        debug(2) {
           stderr.writeln("\t", node.cost, node.tree.getActions());
         }
 
@@ -255,7 +253,7 @@ class PlayerTarou : Player {
               continue;
             }
 
-            debug {
+            debug(2) {
               stderr.writeln("\t\t", i, " -> ", node.cost - COST[i]);
             }
 
@@ -286,19 +284,22 @@ class PlayerTarou : Player {
         root
       };
       queue.insert(atom);
+      /+
       debug {
-        stderr.writeln("-- plan2 --");
-        stderr.writeln = root.getActions();
+        stderr.writeln("-- next plan --");
       }
+      +/
       done_init();
       auto me = root.info.samuraiInfo[root.info.weapon];
       done[me.curX][me.curY][me.hidden][0] = MAX_POWER;
       while (queue.length) {
         Node node = queue.front();
         queue.removeFront();
+        /+
         debug {
           stderr.writeln("\t", node.cost, node.tree.getActions());
         }
+        +/
         
         if (node.attack > 0) {
           continue;
@@ -324,9 +325,11 @@ class PlayerTarou : Player {
               continue;
             }
 
+            /+
             debug {
               stderr.writeln("\t\t", i, " -> ", node.cost - COST[i]);
             }
+            +/
 
             done[nme.curX][nme.curY]
                     [nme.hidden]
@@ -360,55 +363,7 @@ class PlayerTarou : Player {
     void you_are_dead_already() pure @safe nothrow {
       agent.reward();
     }
-    override void play(GameInfo info) @trusted {
-      debug {
-        stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn());
-      }
-      if (info.isLastTurn()) {
-        agent.save();
-      }
-
-      if (rivalPointDupFlag) {
-        auto rival = info.samuraiInfo[info.weapon + 3];
-        if (rival.curX == -1 && rival.curY == -1) {
-          if (rivalPointDup.x != -1 && rivalPointDup.y != -1
-              && info.field[rivalPointDup.y][rivalPointDup.x] >= 3) {
-            debug(2) {
-              stderr.writeln("\tknew it : (", rivalPointDup.x, ", ", rivalPointDup.y, ") ... ", info.field[rivalPointDup.y][rivalPointDup.x]);
-            }
-            rival.curX = rivalPointDup.x;
-            rival.curY = rivalPointDup.y;
-            info.samuraiInfo[info.weapon + 3] = rival;
-          }
-        }
-      }
-
-      if (latestField is null) {
-        latestField = info.field.map!(a => a.dup).array;
-      } else {
-        for (int y = 0; y < info.height; ++y) {
-          for (int x = 0; x < info.width; ++x) {
-            if (info.field[y][x] == 9) {
-              continue;
-            }
-            latestField[y][x] = info.field[y][x];
-          }
-        }
-      }
-      int[6] paintCount;
-      for (int i = 0; i < 6; ++i) {
-        paintCount[i] = 0;
-      }
-      for (int y = 0; y < info.height; ++y) {
-        for (int x = 0; x < info.width; ++x) {
-          int v = latestField[y][x];
-          if (0 <= v && v < 6) {
-            ++paintCount[v];
-          }
-        }
-      }
-      info.setRivalInfo(paintCount);
-
+    void search(GameInfo info) {
       if (fieldDup !is null && samuraiDup !is null) {
         enum ox = [
           [0, 0, 0, 0],
@@ -436,7 +391,7 @@ class PlayerTarou : Player {
         for (int i = 3; i < 6; ++i) {
           auto si = info.samuraiInfo[i];
           if (si.curX == -1 && si.curY == -1) {
-            debug(2) {
+            debug {
               stderr.writeln("search ", i);
             }
             Point[] arr;
@@ -480,7 +435,7 @@ class PlayerTarou : Player {
               }
             }
             arr = arr.sort.uniq.array;
-            debug(2) {
+            debug {
               foreach (k; arr) {
                 stderr.writeln("\t? : ", k);
               }
@@ -489,7 +444,7 @@ class PlayerTarou : Player {
               Point p = arr.front;
               int x = p.x;
               int y = p.y;
-              debug(2) {
+              debug {
                 stderr.writeln("\t\tgot it! : ", p);
               }
               si.curX = x;
@@ -503,12 +458,75 @@ class PlayerTarou : Player {
               probPointDup[i] = arr;
             }
           } else {
-            debug(2) {
+            debug {
               stderr.writeln("I see ", i, " : (", si.curX, ", ", si.curY, ")");
             }
           }
         }
       }
+      
+      if (samuraiMemory is null) {
+        samuraiMemory = info.samuraiInfo.dup;
+      } else {
+        for (int i = 3; i < 6; ++i) {
+          if ((info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
+          || (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+          || (info.turn % 6 == 1 && info.samuraiInfo[i].done)) {
+            samuraiMemory[i].curX = info.samuraiInfo[i].curX;
+            samuraiMemory[i].curY = info.samuraiInfo[i].curY;
+            debug {
+              stderr.writeln("\trenew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+              stderr.writeln("\t\t because : ", [(info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
+          , (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+          , (info.turn % 6 == 1 && info.samuraiInfo[i].done)]);
+            }
+          } else {
+            info.samuraiInfo[i].curX = samuraiMemory[i].curX;
+            info.samuraiInfo[i].curY = samuraiMemory[i].curY;
+            debug {
+              stderr.writeln("\tknew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+            }
+          }
+          samuraiMemory[i].done = info.samuraiInfo[i].done;
+        }
+      }
+
+    }
+    override void play(GameInfo info) @trusted {
+      debug {
+        stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn());
+      }
+      if (info.isLastTurn()) {
+        agent.save();
+      }
+      
+      if (latestField is null) {
+        latestField = info.field.map!(a => a.dup).array;
+      } else {
+        for (int y = 0; y < info.height; ++y) {
+          for (int x = 0; x < info.width; ++x) {
+            if (info.field[y][x] == 9) {
+              continue;
+            }
+            latestField[y][x] = info.field[y][x];
+          }
+        }
+      }
+      int[6] paintCount;
+      for (int i = 0; i < 6; ++i) {
+        paintCount[i] = 0;
+      }
+      for (int y = 0; y < info.height; ++y) {
+        for (int x = 0; x < info.width; ++x) {
+          int v = latestField[y][x];
+          if (0 <= v && v < 6) {
+            ++paintCount[v];
+          }
+        }
+      }
+      info.setRivalInfo(paintCount);
+
+      search(info);
 
       HistoryTree root = new HistoryTree(null, info, 0);
       plan2(root);
@@ -558,8 +576,6 @@ class PlayerTarou : Player {
       best.paintUsingHistory();
       fieldDup = best.field.map!(a => a.dup).array;
       samuraiDup = best.samuraiInfo.dup;
-      rivalPointDup = Point(-1, -1);
-      rivalPointDupFlag = false;
     }
 }
 

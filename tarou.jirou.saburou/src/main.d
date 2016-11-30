@@ -20,11 +20,17 @@ void main(string[] args)
         }
       }
     }
+    for (int i = 3; i < 6; ++i) {
+      with(info.samuraiInfo[i]) {
+        stderr.writefln("#%d : %d, %d, %d, %d, %d", i, curX, curY, done, hidden, curePeriod);
+      }
+    }
     if (idx != -1) {
       info.weapon = idx;
       p.play(info);
       0.writeln;
     } else {
+      p.search(info);
       p.setDup(info);
       "0 0".writeln;
     }
