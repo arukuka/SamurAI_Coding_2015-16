@@ -40,8 +40,8 @@ class ProfitSharingVQ {
     }
     
     static int encodeState(const GameInfo src, const GameInfo next) pure @safe nothrow {
-      const SamuraiInfo mesrc = src.samuraiInfo[src.weapon];
-      const SamuraiInfo menext = next.samuraiInfo[src.weapon];
+      const SamuraiInfo mesrc = src.samuraiInfo[next.weapon];
+      const SamuraiInfo menext = next.samuraiInfo[next.weapon];
       
       int code = 0;
       code += menext.curX;
