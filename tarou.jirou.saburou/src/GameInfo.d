@@ -86,13 +86,11 @@ class GameInfo {
 
       this.turns   = 96;
       this.side    = res[0].to!int;
-      this.weapon  = 0;
+      this.weapon  = -1;
       this.width   = 15;
       this.height  = 15;
       this.maxCure = 18;
       
-      stderr.writeln(this.side, " ", HOME_POSITION, " : ", HOME_POSITION[this.side]);
-
       foreach(i, ref s; this.samuraiInfo) {
         if (i < 3) {
           s.homeX = HOME_POSITION[this.side][i][0];
