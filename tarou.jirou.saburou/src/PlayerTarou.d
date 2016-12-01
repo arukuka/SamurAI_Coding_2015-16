@@ -289,6 +289,9 @@ class PlayerTarou : Player {
                 continue;
             }
             GameInfo next = new GameInfo(node.tree.getInfo());
+            if (next.samuraiInfo[next.weapon].hidden == 0 && i == 9) {
+              continue;
+            }
             next.doAction(i);
             auto nme = next.samuraiInfo[next.weapon];
             immutable attack_id = ((1 <= i && i <= 4) ?
