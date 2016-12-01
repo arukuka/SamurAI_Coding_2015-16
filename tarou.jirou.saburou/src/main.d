@@ -5,28 +5,30 @@ import std.stdio;
 void main(string[] args)
 {
   GameInfo info = new GameInfo();
-  PlayerTarou p = new PlayerTarou(info.weapon, info.side, args);
+  PlayerTarou p = new PlayerTarou();
 
   while (1) {
     info.readTurnInfo();
     stderr.writefln("# Turn %d", info.turn);
-    int idx = -1;
+    bool able = false;
     for (int i = 0; i < 3; ++i) {
       with(info.samuraiInfo[i]) {
-        stderr.writefln("#%d : %d, %d, %d, %d, %d", i, curX, curY, done, hidden, curePeriod);
+        debug{
+          stderr.writefln("#%d : %d, %d, %d, %d, %d", i, curX, curY, done, hidden, curePeriod);
+        }
         if (!done && curePeriod == 0) {
-          idx = i;
-          break;
+          able |= true;
         }
       }
     }
-    for (int i = 3; i < 6; ++i) {
-      with(info.samuraiInfo[i]) {
-        stderr.writefln("#%d : %d, %d, %d, %d, %d", i, curX, curY, done, hidden, curePeriod);
+    debug {
+      for (int i = 3; i < 6; ++i) {
+        with(info.samuraiInfo[i]) {
+          stderr.writefln("#%d : %d, %d, %d, %d, %d", i, curX, curY, done, hidden, curePeriod);
+        }
       }
     }
-    if (idx != -1) {
-      info.weapon = idx;
+    if (able) {
       p.play(info);
       0.writeln;
     } else {
