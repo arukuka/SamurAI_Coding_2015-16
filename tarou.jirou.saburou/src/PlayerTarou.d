@@ -374,18 +374,10 @@ class PlayerTarou : Player {
       }
     }
 
-    ProfitSharingVQ agent;
   public:
-    this(int weapon, int side, string[] args) {
-      agent = new ProfitSharingVQ(weapon, side, args);
-      agent.evapolate();
-    }
     void setDup(in GameInfo info) pure @safe {
       fieldDup = info.field.map!(a => a.dup).array;
       samuraiDup = info.samuraiInfo.dup;
-    }
-    void you_are_dead_already() pure @safe nothrow {
-      agent.reward();
     }
     void search(GameInfo info) {
       if (fieldDup !is null && samuraiDup !is null) {
@@ -520,11 +512,6 @@ class PlayerTarou : Player {
       debug {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn());
       }
-      /+ TODO
-      if (info.isLastTurn()) {
-        agent.save();
-      }
-       +/
       
       if (latestField is null) {
         latestField = info.field.map!(a => a.dup).array;
@@ -580,8 +567,6 @@ class PlayerTarou : Player {
       } else {
         //next UNCO-de
         foreach (i, next; histories) {
-          immutable int state = ProfitSharingVQ.encodeState(info, next.info);
-          immutable int action = ProfitSharingVQ.encodeAction(next.getActions());
           HistoryTree next_root = new HistoryTree(null, next.info, 0);
           next_plan2(next_root);
           auto next_histories = next_root.collectEnd();
@@ -589,8 +574,7 @@ class PlayerTarou : Player {
           double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[info.weapon])));
 
           double v = next.getInfo().score(MERITS4WEAPON[info.weapon])
-                      + next_max_score
-                      - agent.get(state, action);
+                      + next_max_score;
           nodes[i] = node(i, v);
         }
       }
@@ -608,7 +592,6 @@ class PlayerTarou : Player {
       
       immutable int state = ProfitSharingVQ.encodeState(info, best);
       immutable int action = ProfitSharingVQ.encodeAction(bestActions);
-      agent.enqueue(state, action);
 
       best.paintUsingHistory();
       fieldDup = best.field.map!(a => a.dup).array;
