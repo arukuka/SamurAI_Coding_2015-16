@@ -571,9 +571,9 @@ class PlayerTarou : Player {
           next_plan2(next_root);
           auto next_histories = next_root.collectEnd();
           
-          double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[info.weapon])));
+          double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
 
-          double v = next.getInfo().score(MERITS4WEAPON[info.weapon])
+          double v = next.getInfo().score(MERITS4WEAPON[next.getInfo().weapon])
                       + next_max_score;
           nodes[i] = node(i, v);
         }
