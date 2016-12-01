@@ -496,6 +496,12 @@ class PlayerTarou : Player {
           , (info.samuraiInfo[i].done && !samuraiMemory[i].done)
           , (info.turn % 6 == 1 && info.samuraiInfo[i].done)]);
             }
+          } else if (info.samuraiInfo[i].curePeriod > 0) {
+            samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
+            samuraiMemory[i].curY = info.samuraiInfo[i].curY = info.samuraiInfo[i].homeY;
+            debug {
+              stderr.writeln("\tchange ", i, " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+            }
           } else {
             info.samuraiInfo[i].curX = samuraiMemory[i].curX;
             info.samuraiInfo[i].curY = samuraiMemory[i].curY;
