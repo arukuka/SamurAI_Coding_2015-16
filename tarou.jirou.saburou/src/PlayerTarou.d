@@ -148,6 +148,17 @@ class PlayerTarou : Player {
           list ~= this;
           return list;
         }
+        
+        HistoryTree[] collectEnd() @safe pure nothrow {
+          if (children.length == 0) {
+            return [this];
+          }
+          HistoryTree[] list;
+          foreach (c; children) {
+            list ~= c.collectEnd();
+          }
+          return list;
+        }
     }
 
     deprecated
@@ -252,6 +263,7 @@ class PlayerTarou : Player {
         }
       }
     }
+    deprecated
     void next_plan(HistoryTree root) pure @trusted
     {
       auto queue = redBlackTree!((l, r) => l.cost > r.cost, true, Node)();
@@ -326,6 +338,38 @@ class PlayerTarou : Player {
 
             queue.insert(nnode);
           }
+        }
+      }
+    }
+    void next_plan2(HistoryTree root) pure @safe
+    {
+      HistoryTree ptr = root;
+      GameInfo atom = new GameInfo(root.getInfo());
+      if (atom.samuraiInfo[atom.weapon].hidden == 1) {
+        atom.doAction(9);
+        HistoryTree child = new HistoryTree(root, atom, 9);
+        root.add(child);
+        ptr = child;
+      }
+      for (int i = 1; i <= 4; ++i) {
+        GameInfo next = new GameInfo(ptr.getInfo());
+        next.doAction(i);
+        HistoryTree child = new HistoryTree(ptr, next, i);
+        ptr.add(child);
+      }
+      for (int i = 5; i <= 8; ++i) {
+        if (!ptr.getInfo().isValid(i)) {
+          continue;
+        }
+        GameInfo next = new GameInfo(ptr.getInfo());
+        next.doAction(i);
+        HistoryTree child = new HistoryTree(ptr, next, i);
+        ptr.add(child);
+        for (int j = 1; j <= 4; ++j) {
+          GameInfo next2 = new GameInfo(next);
+          next2.doAction(j);
+          HistoryTree grand = new HistoryTree(child, next2, j);
+          child.add(grand);
         }
       }
     }
@@ -539,9 +583,9 @@ class PlayerTarou : Player {
           immutable int state = ProfitSharingVQ.encodeState(info, next.info);
           immutable int action = ProfitSharingVQ.encodeAction(next.getActions());
           HistoryTree next_root = new HistoryTree(null, next.info, 0);
-          next_plan(next_root);
-          auto next_histories = next_root.collect();
-
+          next_plan2(next_root);
+          auto next_histories = next_root.collectEnd();
+          
           double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[info.weapon])));
 
           double v = next.getInfo().score(MERITS4WEAPON[info.weapon])
