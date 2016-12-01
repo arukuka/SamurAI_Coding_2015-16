@@ -673,6 +673,7 @@ class GameInfo {
       occupiedPointsArray = occupiedPointsArray.init;
     }
     
+    deprecated
     bool isLastTurn() const pure @safe nothrow {
       int mid = this.weapon + 3 * this.side;
       foreach_reverse(idx, id; TURNS_RULE) {

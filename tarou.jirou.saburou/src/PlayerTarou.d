@@ -24,46 +24,46 @@ class PlayerTarou : Player {
     static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(150)
+        .setKill(1000)
         .setHide(0)
-        .setSafe(300)
+        .setSafe(2000)
         .setUsur(20)
         .setDepl(1)
         .build();
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(150)
+        .setKill(1000)
         .setHide(0)
-        .setSafe(300)
+        .setSafe(2000)
         .setUsur(20)
         .setMidd(1)
         .setGrup(5)
-        .setTchd(100)
+        .setTchd(500)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(150)
+        .setKill(1000)
         .setHide(0)
-        .setSafe(300)
+        .setSafe(2000)
         .setUsur(20)
         .setDepl(1)
-        .setTchd(100)
+        .setTchd(500)
 //        .setLand(20)
 //        .setMvat(22)
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(150)
+        .setKill(1000)
         .setHide(0)
-        .setSafe(300)
+        .setSafe(2000)
         .setUsur(20)
         .setDepl(1)
         .setGrup(5)
-        .setTchd(100)
+        .setTchd(500)
 //        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
@@ -75,13 +75,7 @@ class PlayerTarou : Player {
     static const Merits NEXT_DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(20)
         .setSelf(-5)
-        .setKill(0)
-        .setHide(0)
-        .setSafe(0)
         .setUsur(20)
-        .setDepl(1)
-        .setMidd(1)
-        .setFght(5)
         .build();
     static const Merits NEXT_SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -89,14 +83,12 @@ class PlayerTarou : Player {
         .setUsur(20)
         .setMidd(1)
         .setGrup(5)
-        .setKrnt(125)
         .build();
     static const Merits NEXT_SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
         .setUsur(20)
         .setDepl(1)
-        .setKrnt(125)
         .build();
     static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
@@ -104,7 +96,6 @@ class PlayerTarou : Player {
         .setUsur(20)
         .setDepl(1)
         .setGrup(5)
-        .setKrnt(125)
         .build();
     static const Merits[3] NEXT_MERITS4WEAPON = [
       NEXT_SPEAR_MERITS,
@@ -482,9 +473,11 @@ class PlayerTarou : Player {
       debug {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn());
       }
+      /+ TODO
       if (info.isLastTurn()) {
         agent.save();
       }
+       +/
       
       if (latestField is null) {
         latestField = info.field.map!(a => a.dup).array;
@@ -532,7 +525,7 @@ class PlayerTarou : Player {
 
       alias node = Tuple!(ulong, "index", double, "score");
       node[] nodes = new node[histories.length];
-      if (info.isLastTurn()) {
+      if (info.turn/6 == 15) {
         foreach (i, next; histories) {
           double v = next.getInfo().score(LAST_TURN_MERIT);
           nodes[i] = node(i, v);
