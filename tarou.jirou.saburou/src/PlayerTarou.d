@@ -487,14 +487,16 @@ class PlayerTarou : Player {
         for (int i = 3; i < 6; ++i) {
           if ((info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
           || (info.samuraiInfo[i].done && !samuraiMemory[i].done)
-          || (info.turn % 6 == 1 && info.samuraiInfo[i].done)) {
+          || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+          || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
             samuraiMemory[i].curX = info.samuraiInfo[i].curX;
             samuraiMemory[i].curY = info.samuraiInfo[i].curY;
             debug {
               stderr.writeln("\trenew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
               stderr.writeln("\t\t because : ", [(info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
           , (info.samuraiInfo[i].done && !samuraiMemory[i].done)
-          , (info.turn % 6 == 1 && info.samuraiInfo[i].done)]);
+          , (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+          , (info.turn % 6 == 0 && !samuraiMemory[i].done)]);
             }
           } else if (info.samuraiInfo[i].curePeriod > 0) {
             samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
