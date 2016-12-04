@@ -49,7 +49,7 @@ class PlayerTarou : Player {
         .setHide(0)
         .setSafe(3000)
         .setUsur(20)
-        .setDepl(1)
+        .setMidd(1)
         .setTchd(1000)
 //        .setLand(20)
 //        .setMvat(22)
@@ -61,7 +61,7 @@ class PlayerTarou : Player {
         .setHide(0)
         .setSafe(3000)
         .setUsur(20)
-        .setDepl(1)
+        .setMidd(1)
         .setGrup(5)
         .setTchd(1000)
 //        .setMvat(22)
@@ -88,13 +88,13 @@ class PlayerTarou : Player {
         .setTerr(25)
         .setSelf(-5)
         .setUsur(20)
-        .setDepl(1)
+        .setMidd(1)
         .build();
     static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
         .setUsur(20)
-        .setDepl(1)
+        .setMidd(1)
         .setGrup(5)
         .build();
     static const Merits[3] NEXT_MERITS4WEAPON = [
