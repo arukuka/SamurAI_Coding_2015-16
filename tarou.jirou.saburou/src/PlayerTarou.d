@@ -551,6 +551,7 @@ class PlayerTarou : Player {
       
       HistoryTree[] histories = HistoryTree[].init;
       
+      GameInfo[3] infos;
       for (int i = 0; i < 3; ++i) {
         with (info.samuraiInfo[i]) {
           if (done || curePeriod > 0) {
@@ -559,6 +560,7 @@ class PlayerTarou : Player {
         }
         GameInfo jnfo = new GameInfo(info);
         jnfo.weapon = i;
+        infos[i] = jnfo;
         HistoryTree root = new HistoryTree(null, jnfo, 0);
         plan2(root);
         
@@ -583,8 +585,9 @@ class PlayerTarou : Player {
           
           double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next_weapon])));
 
-          double v = next.getInfo().score(MERITS4WEAPON[next_weapon])
-                      + next_max_score;
+          double v = next.getInfo().score(MERITS4WEAPON[next.getInfo().weapon])
+                      + next_max_score
+                      - infos[next.getInfo().weapon].score(MERITS4WEAPON[next.getInfo().weapon]);
           nodes[i] = node(i, v);
         }
       }
