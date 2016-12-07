@@ -20,22 +20,23 @@ class PlayerTarou : Player {
     int[][] fieldDup = null;
     SamuraiInfo[] samuraiDup = null;
     Point[][6] probPointDup;
+    int[][3] prevActions = [[0], [0], [0]];
 
     static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(2000)
-        .setHide(0)
-        .setSafe(3000)
+        .setKill(3000)
+        .setHide(0.5)
+        .setSafe(2000)
         .setUsur(20)
         .setDepl(1)
         .build();
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(2000)
-        .setHide(0)
-        .setSafe(3000)
+        .setKill(3000)
+        .setHide(0.5)
+        .setSafe(2000)
         .setUsur(20)
         .setMidd(1)
         .setGrup(5)
@@ -45,9 +46,9 @@ class PlayerTarou : Player {
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(2000)
-        .setHide(0)
-        .setSafe(3000)
+        .setKill(3000)
+        .setHide(0.5)
+        .setSafe(2000)
         .setUsur(20)
         .setMidd(1)
         .setTchd(1000)
@@ -57,9 +58,9 @@ class PlayerTarou : Player {
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(25)
         .setSelf(-5)
-        .setKill(2000)
-        .setHide(0)
-        .setSafe(3000)
+        .setKill(3000)
+        .setHide(0.5)
+        .setSafe(2000)
         .setUsur(20)
         .setMidd(1)
         .setGrup(5)
@@ -441,9 +442,7 @@ class PlayerTarou : Player {
                   }
                   flag &= done;
                   flag &= diffCount == diffPrevCount[i];
-                  if (info.samuraiInfo[i].curX == -1 && info.samuraiInfo[i].curY == -1) {
-                    flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
-                  }
+                  flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
                   if (flag) {
                     arr ~= Point(x, y);
                   }
@@ -491,6 +490,13 @@ class PlayerTarou : Player {
           || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
             samuraiMemory[i].curX = info.samuraiInfo[i].curX;
             samuraiMemory[i].curY = info.samuraiInfo[i].curY;
+            if (info.samuraiInfo[i].curX == -1 || info.samuraiInfo[i].curY == -1) {
+              tegakari[i].count++;
+            } else {
+              tegakari[i].x = info.samuraiInfo[i].curX;
+              tegakari[i].y = info.samuraiInfo[i].curY;
+              tegakari[i].count = 0;
+            }
             debug {
               stderr.writeln("\trenew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
               stderr.writeln("\t\t because : ", [(info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
@@ -501,6 +507,9 @@ class PlayerTarou : Player {
           } else if (info.samuraiInfo[i].curePeriod > 0) {
             samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
             samuraiMemory[i].curY = info.samuraiInfo[i].curY = info.samuraiInfo[i].homeY;
+            tegakari[i].x = info.samuraiInfo[i].curX;
+            tegakari[i].y = info.samuraiInfo[i].curY;
+            tegakari[i].count = 0;
             debug {
               stderr.writeln("\tchange ", i, " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
             }
@@ -515,6 +524,18 @@ class PlayerTarou : Player {
         }
       }
 
+    }
+    struct Tegakari {
+      int x, y;
+      int count;
+    }
+    Tegakari[6] tegakari;
+    this (GameInfo info) {
+      for (int i = 3; i < 6; ++i) {
+        tegakari[i].x = info.samuraiInfo[i].homeX;
+        tegakari[i].y = info.samuraiInfo[i].homeY;
+        tegakari[i].count = 0;
+      }
     }
     override void play(GameInfo info) @trusted {
       debug {
@@ -548,6 +569,94 @@ class PlayerTarou : Player {
       info.setRivalInfo(paintCount);
 
       search(info);
+      
+      bool[][][] naname2danger = new bool[][][](3, 15, 15);
+      bool[3] yabasou;
+      for (int i = 0; i < 3; ++i) {
+        bool yaba = false;
+        foreach (v; prevActions[i]) {
+          yaba |= 1 <= v && v <= 4;
+        }
+        enum ofs = [
+          [ [-2, -2], [-2, 2], [2, -2], [2, 2] ],
+          [ [-4, 0], [-3, -1], [-2, -2], [-1, -3], [0, -4], 
+            [ 4, 0], [ 3, -1], [ 2, -2], [ 1, -3],
+                     [-3,  1], [-2,  2], [-1,  3], [0,  4],
+                     [ 3,  1], [ 2,  2], [ 1,  3]           ],
+          [ [-4, 0], [-3, -1], [-2, -2], [-1, -3], [0, -4], 
+            [ 4, 0], [ 3, -1], [ 2, -2], [ 1, -3], [0, -3],
+            [-3, 0], [-3,  1], [-2,  2], [-1,  3], [0,  4],
+            [ 3, 0], [ 3,  1], [ 2,  2], [ 1,  3], [0,  3] ]
+        ];
+        if (info.samuraiInfo[i].hidden == 0 || yaba) {
+          foreach (d; ofs[i]) {
+            int x = info.samuraiInfo[i].curX + d[0];
+            int y = info.samuraiInfo[i].curY + d[1];
+            if (0 <= x && x < 15 && 0 <= y && y < 15
+                && 3 <= info.field[y][x] && info.field[y][x] < 6) {
+              for (int j = 3; j < 6; ++j) {
+                if (info.samuraiInfo[j].curX != -1 || info.samuraiInfo[j].curY != -1) {
+                  continue;
+                }
+                if (Math.abs(x - tegakari[j].x) + Math.abs(y - tegakari[j].y) > (tegakari[j].count == 0 ? 0 : 3 + tegakari[j].count - 1)) {
+                  continue;
+                }
+                enum ox = [
+                  [0, 0, 0, 0],
+                  [0, 0, 1, 1, 2],
+                  [-1, -1, -1, 0, 1, 1, 1]
+                ];
+                enum oy = [
+                  [1, 2, 3, 4],
+                  [1, 2, 0, 1, 0],
+                  [0, -1, 1, 1, 1, -1, 0]
+                ];
+                enum ofs2 = [
+                  [0, 0],
+                  [0, 1],
+                  [0, -1],
+                  [1, 0],
+                  [-1, 0]
+                ];
+                foreach (d2; ofs2) {
+                  int x2 = x + d2[0];
+                  int y2 = y + d2[1];
+                  for (int r = 0; r < 4; ++r) {
+                    for (int k = 0; k < ox[j - 3].length; ++k) {
+                      auto p = GameInfo.rotate(r, ox[j - 3][k], oy[j - 3][k]);
+                      int nx = x2 + p.x;
+                      int ny = y2 + p.y;
+                      if (nx < 0 || 15 <= nx || ny < 0 || 15 <= ny) {
+                        continue;
+                      }
+                      naname2danger[i][ny][nx] |= true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (naname2danger[i][info.samuraiInfo[i].curY][info.samuraiInfo[i].curX]) {
+          yabasou[i] = true;
+        }
+      }
+      info.setNaname2Danger(naname2danger);
+      info.setYabasou(yabasou);
+      bool[3] korosisou = true;
+      for (int i = 0; i < 3; ++i) {
+        foreach (v; prevActions[i]) {
+          korosisou[i] &= v >= 5;
+        }
+        korosisou[i] &= info.samuraiInfo[i].hidden == 1;
+      }
+      info.setKorosisou(korosisou);
+      
+      for (int i = 3; i < 6; ++i) {
+        with (tegakari[i]) {
+          stderr.writefln("(%d) : %d, %d ... %d", i, x, y, count);
+        }
+      }
       
       HistoryTree[] histories = HistoryTree[].init;
       
@@ -583,7 +692,7 @@ class PlayerTarou : Player {
           
           auto next_weapon = uniform(0, 3);
           
-          double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next_weapon])));
+          double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
 
           double v = next.getInfo().score(MERITS4WEAPON[next.getInfo().weapon])
                       + next_max_score
@@ -596,19 +705,35 @@ class PlayerTarou : Player {
       auto idx = bests[uniform(0, bests.length)].index;
       GameInfo best = histories[idx].getInfo();
       auto bestActions = histories[idx].getActions();
+      /+
       if (best.samuraiInfo[best.weapon].hidden == 0 && best.isValid(9)) {
         best.doAction(9);
         bestActions ~= 9;
       }
+      +/
+      for (int y = 0; y < 15; ++y) {
+        for (int x = 0; x < 15; ++x) {
+          if (naname2danger[best.weapon][y][x]) {
+            stderr.write(" #");
+          } else {
+            stderr.write(" .");
+          }
+          if (y == best.samuraiInfo[best.weapon].curY
+              && x == best.samuraiInfo[best.weapon].curX) {
+            stderr.write("*");
+          } else {
+            stderr.write(" ");
+          }
+        }
+        stderr.writeln;
+      }
       best.weapon.writeln;
       "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
       
-      immutable int state = ProfitSharingVQ.encodeState(info, best);
-      immutable int action = ProfitSharingVQ.encodeAction(bestActions);
-
       best.paintUsingHistory();
       fieldDup = best.field.map!(a => a.dup).array;
       samuraiDup = best.samuraiInfo.dup;
+      prevActions[best.weapon] = bestActions.dup;
       
       for (int i = 3; i < 6; ++i) {
         if ((best.samuraiInfo[i].curX != -1 && best.samuraiInfo[i].curY != -1)

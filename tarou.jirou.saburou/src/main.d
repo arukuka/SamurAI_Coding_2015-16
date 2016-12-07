@@ -5,7 +5,7 @@ import std.stdio;
 void main(string[] args)
 {
   GameInfo info = new GameInfo();
-  PlayerTarou p = new PlayerTarou();
+  PlayerTarou p = new PlayerTarou(info);
 
   while (1) {
     info.readTurnInfo();

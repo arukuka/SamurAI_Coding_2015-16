@@ -75,10 +75,15 @@ class GameInfo {
       this.probPlaces = info.probPlaces;
 
       this.isAttackContain = info.isAttackContain;
+      this.isMoveContain = info.isMoveContain;
       this.moveAfterAttack = info.moveAfterAttack;
       this.isKilled = info.isKilled;
       
       this.occupiedPointsArray = info.occupiedPointsArray;
+      
+      this.naname2danger = info.naname2danger;
+      this.yabasou = info.yabasou;
+      this.korosisou = info.korosisou;
     }
     
     this() {
@@ -114,9 +119,10 @@ class GameInfo {
       this.paints = 0;
 
       this.isAttackContain = false;
+      this.isMoveContain = false;
       this.moveAfterAttack = false;
       this.isKilled = false;
-
+      
       0.writeln;
       stdout.flush;
     }
@@ -339,6 +345,10 @@ class GameInfo {
       if (isAttackContain && 5 <= action && action <= 8) {
         moveAfterAttack = true;
       }
+      
+      if (5 <= action && action <= 8) {
+        isMoveContain = true;
+      }
 
       final switch(action) {
         case 1, 2, 3, 4:
@@ -533,16 +543,21 @@ class GameInfo {
     }
 
     double safeLevel() const pure nothrow @safe {
+      if (yabasou[this.weapon]) {
+        if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
+          return 0.0;
+        }
+      } else {
+        if (naname2danger[this.weapon][this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
+          return 0.0;
+        }
+      }
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
         if (p.x != -1 && p.y != -1) {
           safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
-        } else {
-          foreach (q; probPlaces[i]) {
-            safe = min(safe, isSafe(i, q) ? 1.0 : 0.0);
-          }
         }
       }
       return safe;
@@ -574,6 +589,11 @@ class GameInfo {
       if (isAttackContain || !me.hidden) {
         return false;
       }
+      /+
+      if (korosisou[this.weapon]) {
+        return false;
+      }
+      +/
       immutable mep = Point(me.curX, me.curY);
       // immutable int[3] turns = nextAITurn2();
       bool flag = false;
@@ -686,6 +706,15 @@ class GameInfo {
     bool haveEnemyIdea(int id) const pure @safe nothrow {
       return samuraiInfo[id].curX == -1 && samuraiInfo[id].curY == -1 && probPlaces[id].length == 0;
     }
+    void setNaname2Danger(bool[][][] naname2danger) pure @safe nothrow {
+      this.naname2danger = naname2danger;
+    }
+    void setYabasou(bool[3] yabasou) pure @safe nothrow {
+      this.yabasou = yabasou;
+    }
+    void setKorosisou(bool[3] korosisou) pure @safe nothrow {
+      this.korosisou = korosisou;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -697,9 +726,13 @@ class GameInfo {
     Point[][6] probPlaces;
     bool isAttackContain;
     bool moveAfterAttack;
+    bool isMoveContain;
     bool[3] isKilled;
     alias Tuple!(Point, "key", int, "val") Panel;
     Panel[] occupiedPointsArray;
+    bool[][][] naname2danger;
+    bool[3] yabasou;
+    bool[3] korosisou;
 
     string[] read() {
       string line = "";
