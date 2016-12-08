@@ -290,31 +290,31 @@ class GameInfo {
                 if (get(nx, ny) >= 8) {
                   ++occupyCount;
                 }
+                
+                enum ofs = [
+                  [0, 1],
+                  [0, -1],
+                  [1, 0],
+                  [-1, 0]
+                ];
+                foreach (dp; ofs) {
+                  int adjx = nx + dp[0];
+                  int adjy = ny + dp[1];
+                  if ( adjx < 0 || this.width <= adjx || adjy < 0 || this.height <= adjy ) {
+                    ++groupCount;
+                    break;
+                  }
+                  if (fieldDup[adjy][adjx] < 3) {
+                    ++groupCount;
+                    break;
+                  }
+                }
               } else {
                 ++selfCount;
               }
               // field[ny][nx] = this.weapon;
               // this.occupiedPointsArray ~= Panel(Point(nx, ny), this.weapon);
               painted ~= Panel(Point(nx, ny), this.weapon);
-
-              enum ofs = [
-                [0, 1],
-                [0, -1],
-                [1, 0],
-                [-1, 0]
-              ];
-              foreach (dp; ofs) {
-                int adjx = nx + dp[0];
-                int adjy = ny + dp[1];
-                if ( adjx < 0 || this.width <= adjx || adjy < 0 || this.height <= adjy ) {
-                  ++groupCount;
-                  break;
-                }
-                if (fieldDup[adjy][adjx] < 3) {
-                  ++groupCount;
-                  break;
-                }
-              }
             }
             for (int j = 3; j < GameInfo.PLAYER_NUM; ++j) {
               SamuraiInfo si = this.samuraiInfo[j];
@@ -381,6 +381,7 @@ class GameInfo {
           // + this.hasKilledRivalAtNextTurn() * m.krnt
           + this.hasHiddenTactically() * m.tchd
           // + this.isInSafeLand() * m.land
+          + this.giriScore() * m.giri
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -453,7 +454,7 @@ class GameInfo {
           return (dx + dy) >= 5 || max(dx, dy) >= 4;
       }
     }
-    static bool isSafeLimit(immutable Point me, immutable Point rv, immutable int idx) pure nothrow @safe {
+    static double isSafeLimit(immutable Point me, immutable Point rv, immutable int idx) pure nothrow @safe {
       immutable int dx = Math.abs(rv.x - me.x);
       immutable int dy = Math.abs(rv.y - me.y);
       final switch(idx) {
@@ -462,7 +463,7 @@ class GameInfo {
         case 4:
           return (dx + dy) == 4;
         case 5:
-          return (dx + dy) == 4 || (min(dx, dy) == 0 && max(dx, dy) == 3);
+          return ((dx + dy) == 4) + (min(dx, dy) == 0 && max(dx, dy) == 3) * 2;
       }
     }
     bool isSafe(immutable int idx, immutable Point p) const pure nothrow @safe {
@@ -548,7 +549,7 @@ class GameInfo {
           return 0.0;
         }
       } else {
-        if (naname2danger[this.weapon][this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
+        if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
           return 0.0;
         }
       }
@@ -584,7 +585,7 @@ class GameInfo {
       immutable int[3] turns = nextAITurn2();
       return isKilled[this.weapon] && turns[this.weapon] == 0;
     }
-    bool hasHiddenTactically() const pure nothrow @safe {
+    double hasHiddenTactically() const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
       if (isAttackContain || !me.hidden) {
         return false;
@@ -596,7 +597,7 @@ class GameInfo {
       +/
       immutable mep = Point(me.curX, me.curY);
       // immutable int[3] turns = nextAITurn2();
-      bool flag = false;
+      double flag = 0;
       for (int i = 3; i < 6; ++i) {
         const SamuraiInfo si = this.samuraiInfo[i];
         immutable sip = Point(si.curX, si.curY);
@@ -611,7 +612,20 @@ class GameInfo {
           continue;
         }
         +/
-        flag |= isSafeLimit(mep, sip, i);
+        flag += isSafeLimit(mep, sip, i);
+        if (flag > 0) {
+          auto dx = Math.abs(sip.x - mep.x);
+          auto dy = Math.abs(sip.y - mep.y);
+          if (min(dx, dy) == 0) {
+            if (this.weapon == 0) {
+              flag += 0.5;
+            } else if (this.weapon == 2) {
+              flag -= 1.0;
+            }
+          } else if (min(dx, dy) == 1 && this.weapon == 2) {
+            flag -= 1.0;
+          }
+        }
       }
       return flag;
     }
@@ -706,7 +720,7 @@ class GameInfo {
     bool haveEnemyIdea(int id) const pure @safe nothrow {
       return samuraiInfo[id].curX == -1 && samuraiInfo[id].curY == -1 && probPlaces[id].length == 0;
     }
-    void setNaname2Danger(bool[][][] naname2danger) pure @safe nothrow {
+    void setNaname2Danger(int[][] naname2danger) pure @safe nothrow {
       this.naname2danger = naname2danger;
     }
     void setYabasou(bool[3] yabasou) pure @safe nothrow {
@@ -714,6 +728,34 @@ class GameInfo {
     }
     void setKorosisou(bool[3] korosisou) pure @safe nothrow {
       this.korosisou = korosisou;
+    }
+    double giriScore() const pure @safe nothrow {
+      auto me = this.samuraiInfo[this.weapon];
+      auto p = Point(me.curX, me.curY);
+      with (p) {
+        if (naname2danger[y][x] > 0) {
+          return 0.0;
+        }
+        if (isAttackContain || me.hidden == 0) {
+          return 0.0;
+        }
+        enum ofs = [
+          [0, 1],
+          [0, -1],
+          [1, 0],
+          [-1, 0]
+        ];
+        int score = 0;
+        foreach (d; ofs) {
+          int nx = x + d[0];
+          int ny = y + d[1];
+          if ( nx < 0 || 15 <= nx || ny < 0 || 15 <= ny ) {
+            continue;
+          }
+          score += naname2danger[ny][nx];
+        }
+        return score;
+      }
     }
  private:
     int occupyCount;
@@ -730,7 +772,7 @@ class GameInfo {
     bool[3] isKilled;
     alias Tuple!(Point, "key", int, "val") Panel;
     Panel[] occupiedPointsArray;
-    bool[][][] naname2danger;
+    int[][] naname2danger;
     bool[3] yabasou;
     bool[3] korosisou;
 
