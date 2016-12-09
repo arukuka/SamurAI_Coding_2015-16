@@ -84,6 +84,8 @@ class GameInfo {
       this.naname2danger = info.naname2danger;
       this.yabasou = info.yabasou;
       this.korosisou = info.korosisou;
+      this.target = info.target;
+      this.reservedTarget = info.target;
     }
     
     this() {
@@ -122,6 +124,9 @@ class GameInfo {
       this.isMoveContain = false;
       this.moveAfterAttack = false;
       this.isKilled = false;
+      
+      this.target = false;
+      this.reservedTarget = false;
       
       0.writeln;
       stdout.flush;
@@ -382,6 +387,7 @@ class GameInfo {
           + this.hasHiddenTactically() * m.tchd
           // + this.isInSafeLand() * m.land
           + this.giriScore() * m.giri
+          + this.existTarget() * m.trgt
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -555,6 +561,9 @@ class GameInfo {
       }
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
+        if (this.target[i - 3] || this.reservedTarget[i - 3]) {
+          continue;
+        }
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
         if (p.x != -1 && p.y != -1) {
@@ -757,6 +766,44 @@ class GameInfo {
         return score;
       }
     }
+    bool existTarget() const pure @safe nothrow {
+      foreach (t; this.target) {
+        if (t) {
+          return true;
+        }
+      }
+      return false;
+    }
+    void findTarget() pure @safe nothrow {
+      if (this.side != 0) {
+        return;
+      }
+      foreach (f; this.reservedTarget) {
+        if (f) {
+          return;
+        }
+      }
+      for (int i = 3; i < 6; ++i) {
+        SamuraiInfo si = this.samuraiInfo[i];
+        if (!si.done) {
+          continue;
+        }
+        if (si.curX == -1 || si.curY == -1) {
+          continue;
+        }
+        // is in kill zone
+        SamuraiInfo me = this.samuraiInfo[this.weapon];
+        Point sip = Point(si.curX, si.curY);
+        Point mep = Point(me.curX, me.curY);
+        this.target[i - 3] = !GameInfo.isSafe(mep, sip, this.weapon + 3);
+      }
+    }
+    void setReservedTarget(bool[3] reservedTarget) pure @safe nothrow {
+      this.reservedTarget = reservedTarget;
+    }
+    bool[3] getTarget() const pure @safe nothrow {
+      return this.target;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -775,6 +822,8 @@ class GameInfo {
     int[][] naname2danger;
     bool[3] yabasou;
     bool[3] korosisou;
+    bool[3] target;
+    bool[3] reservedTarget;
 
     string[] read() {
       string line = "";

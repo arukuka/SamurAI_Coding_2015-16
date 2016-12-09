@@ -42,6 +42,7 @@ class PlayerTarou : Player {
         .setGrup(5)
         .setTchd(1000)
         .setGiri(1)
+        .setTrgt(1500)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -53,6 +54,7 @@ class PlayerTarou : Player {
         .setUsur(40)
         .setMidd(1)
         .setTchd(1000)
+        .setTrgt(1500)
         .setGiri(1)
 //        .setLand(20)
 //        .setMvat(22)
@@ -67,6 +69,7 @@ class PlayerTarou : Player {
         .setMidd(-1)
         .setGrup(5)
         .setTchd(1000)
+        .setTrgt(1500)
         .setGiri(1)
 //        .setMvat(22)
         .build();
@@ -540,6 +543,7 @@ class PlayerTarou : Player {
         tegakari[i].count = 0;
       }
     }
+    bool[3] target;
     override void play(GameInfo info) @trusted {
       debug {
         stderr.writeln("turn : ", info.turn, ", side : ", info.side, ", weapon : ", info.weapon, "...", info.isLastTurn());
@@ -682,6 +686,10 @@ class PlayerTarou : Player {
         }
       }
       
+      if (info.turn % 6 < 2) {
+        this.target = false;
+      }
+      
       HistoryTree[] histories = HistoryTree[].init;
       
       /+
@@ -736,6 +744,7 @@ class PlayerTarou : Player {
           }
           GameInfo jnfo = new GameInfo(info);
           jnfo.weapon = i;
+          jnfo.setReservedTarget(this.target);
           infos[i] = jnfo;
           HistoryTree root = new HistoryTree(null, jnfo, 0);
           plan2(root);
@@ -760,6 +769,8 @@ class PlayerTarou : Player {
             auto next_weapon = uniform(0, 3);
             
             double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
+            
+            next.getInfo().findTarget();
 
             double v = next.getInfo().score(MERITS4WEAPON[next.getInfo().weapon])
                         + next_max_score
@@ -802,6 +813,8 @@ class PlayerTarou : Player {
         fieldDup = best.field.map!(a => a.dup).array;
         samuraiDup = best.samuraiInfo.dup;
         prevActions[best.weapon] = bestActions.dup;
+        
+        this.target[] |= best.getTarget()[];
       
         for (int i = 3; i < 6; ++i) {
           if ((best.samuraiInfo[i].curX != -1 && best.samuraiInfo[i].curY != -1)

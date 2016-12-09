@@ -21,6 +21,7 @@ immutable class Merits {
     immutable double land; // making safe land
     immutable double mvat; // moved after attack
     immutable double giri; // girigiri
+    immutable double trgt; // target
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -39,6 +40,7 @@ immutable class Merits {
         double land = 0;
         double mvat = 0;
         double giri = 0;
+        double trgt = 0;
 
       public:
       pure:
@@ -108,6 +110,10 @@ immutable class Merits {
           this.giri = giri;
           return this;
         }
+        MeritsBuilder setTrgt(double trgt) {
+          this.trgt = trgt;
+          return this;
+        }
     }
 
   private:
@@ -127,6 +133,7 @@ immutable class Merits {
       this.land = mb.land;
       this.mvat = mb.mvat;
       this.giri = mb.giri;
+      this.trgt = mb.trgt;
     }
 }
 

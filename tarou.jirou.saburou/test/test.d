@@ -68,6 +68,13 @@ void main()
     rbt4.removeFront;
   }
   +/
+  bool[3] flags;
+  flags[1] = true;
+  flags.writeln;
+  bool[3] arr = flags;
+  arr[2] = true;
+  arr.writeln;
+  flags.writeln;
   test();
 }
 
