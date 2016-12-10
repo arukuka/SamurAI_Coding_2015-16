@@ -435,14 +435,10 @@ class PlayerTarou : Player {
                     if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
                       continue;
                     }
-                    if (info.field[py][px] == fieldDup[py][px]) {
-                      continue;
-                    }
                     done |= info.field[py][px] == i;
                     flag &= info.field[py][px] == i
-                        || info.field[py][px] < 3
-                        || info.field[py][px] >= 8;
-                    if (info.field[py][px] == i && fieldDup[py][px] != 9) {
+                        || info.field[py][px] == 9;
+                    if (info.field[py][px] == i && info.field[py][px] != fieldDup[py][px] && fieldDup[py][px] != 9) {
                       ++diffCount;
                     }
                   }
