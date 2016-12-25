@@ -4,6 +4,7 @@ import std.algorithm;
 import std.container;
 import std.typecons;
 import std.random;
+import std.traits;
 
 alias Tuple!(int, "x", int, "y") Point;
 
@@ -39,6 +40,52 @@ void test()
     auto b = iterateArr();
     auto c = a ~ b;
   }
+}
+
+template hasToString(T, Char)
+{
+    static if(isPointer!T && !isAggregateType!T)
+    {
+        // X* does not have toString, even if X is aggregate type has toString.
+        enum hasToString = 0;
+    }
+    else static if (is(typeof({ T val = void; FormatSpec!Char f; val.toString((const(char)[] s){}, f); })))
+    {
+        enum hasToString = 4;
+    }
+    else static if (is(typeof({ T val = void; val.toString((const(char)[] s){}, "%s"); })))
+    {
+        enum hasToString = 3;
+    }
+    else static if (is(typeof({ T val = void; val.toString((const(char)[] s){}); })))
+    {
+        enum hasToString = 2;
+    }
+    else static if (is(typeof({ T val = void; return val.toString(); }()) S) && isSomeString!S)
+    {
+        enum hasToString = 1;
+    }
+    else
+    {
+        enum hasToString = 0;
+    }
+}
+
+class C {
+  int d;
+}
+
+static assert(is(typeof({ C val = void; return val.toString(); }()) S) && isSomeString!S);
+static assert(is(typeof({ return redBlackTree!C; }())));
+static assert(is(typeof(f())));
+
+auto f()
+{
+  RedBlackTree!(C, (a, b)=>a.d > b.d, true)[96] t;
+  foreach (ref s; t) {
+    s = new typeof(t[0]);
+  }
+  return t;
 }
 
 void main()

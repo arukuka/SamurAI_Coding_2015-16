@@ -86,6 +86,11 @@ class GameInfo {
       this.korosisou = info.korosisou;
       this.target = info.target;
       this.reservedTarget = info.target;
+      
+      this.actions = info.actions.dup;
+      
+      this.comboFlag = info.comboFlag;
+      this.comboActions = info.comboActions;
     }
     
     this() {
@@ -100,16 +105,21 @@ class GameInfo {
       
       foreach(i, ref s; this.samuraiInfo) {
         if (i < 3) {
-          s.homeX = HOME_POSITION[this.side][i][0];
-          s.homeY = HOME_POSITION[this.side][i][1];
+          s.curX = s.homeX = HOME_POSITION[this.side][i][0];
+          s.curY = s.homeY = HOME_POSITION[this.side][i][1];
         } else {
-          s.homeX = HOME_POSITION[1 - this.side][i - 3][0];
-          s.homeY = HOME_POSITION[1 - this.side][i - 3][1];
+          s.curX = s.homeX = HOME_POSITION[1 - this.side][i - 3][0];
+          s.curY = s.homeY = HOME_POSITION[1 - this.side][i - 3][1];
         }
       }
 
       this.turn = 0;
       this.field = new int[][](this.height, this.width);
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+          field[y][x] = 8;
+        }
+      }
 
       this.occupyCount = 0;
       this.playerKill = 0;
@@ -128,8 +138,7 @@ class GameInfo {
       this.target = false;
       this.reservedTarget = false;
       
-      0.writeln;
-      stdout.flush;
+      this.comboFlag = true;
     }
 
     void readTurnInfo() {
@@ -370,6 +379,8 @@ class GameInfo {
       me.curX = curX;
       me.curY = curY;
       this.samuraiInfo[this.weapon] = me;
+      
+      this.actions ~= action;
     }
 
     double score(const Merits m) const pure nothrow @safe {
@@ -388,6 +399,7 @@ class GameInfo {
           // + this.isInSafeLand() * m.land
           + this.giriScore() * m.giri
           + this.existTarget() * m.trgt
+          + this.remainCombo() * m.comb
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -804,6 +816,94 @@ class GameInfo {
     bool[3] getTarget() const pure @safe nothrow {
       return this.target;
     }
+    override size_t toHash() const {
+      enum ulong B = 23;
+      enum ulong M = 1L << 60;
+      ulong hash = 0;
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+          hash = (hash * B + get(x, y)) % M;
+        }
+      }
+      foreach (si; samuraiInfo) {
+        hash = (hash * B + si.homeX) % M;
+        hash = (hash * B + si.homeY) % M;
+        hash = (hash * B + si.curX) % M;
+        hash = (hash * B + si.curY) % M;
+        hash = (hash * B + si.done) % M;
+        hash = (hash * B + si.hidden) % M;
+        hash = (hash * B + si.curePeriod) % M;
+      }
+      return cast(size_t) hash;
+    }
+    override bool opEquals(Object o) {
+      if (this is o) {
+        return true;
+      }
+      if (!cast(typeof(this))o) {
+        return false;
+      }
+      typeof(this) g = cast(typeof(this)) o;
+      bool flag = true;
+      flag &= occupiedPointsArray == g.occupiedPointsArray;
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+          flag &= field[y][x] == g.field[y][x];
+        }
+      }
+      flag &= samuraiInfo == g.samuraiInfo;
+      return flag;
+    }
+    override int opCmp(Object o) {
+      GameInfo g = cast(GameInfo) o;
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+          if (get(x, y) != g.get(x, y)) {
+            return get(x, y) - g.get(x, y);
+          }
+        }
+      }
+      for (int i = 0; i < 6; ++i) {
+        auto s = samuraiInfo[i];
+        auto t = g.samuraiInfo[i];
+        if (s.curX != t.curX) {
+          return s.curX - t.curX;
+        }
+        if (s.curY != t.curY) {
+          return s.curY - t.curY;
+        }
+      }
+      return 0;
+    }
+    void initActions() pure @safe nothrow {
+      actions = [];
+    }
+    auto getPreScore() const pure @safe nothrow {
+      return tuple(occupyCount, groupLevel);
+    }
+    void resetPreScore() pure @safe nothrow {
+      occupyCount = 0;
+      groupLevel = 0;
+    }
+    void setComboActions(int[][] comboActions) pure @safe nothrow {
+      this.comboActions = comboActions;
+    }
+    bool remainCombo() const pure @safe nothrow {
+      if (!comboFlag) {
+        return false;
+      }
+      int idx = this.turn / 2;
+      if (idx >= comboActions.length) {
+        return false;
+      }
+      int w = (idx + 1) % 3;
+      if (w != this.weapon) {
+        return false;
+      }
+      return actions == comboActions[idx];
+    }
+    int[] actions;
+    bool comboFlag;
  private:
     int occupyCount;
     int playerKill;
@@ -824,6 +924,7 @@ class GameInfo {
     bool[3] korosisou;
     bool[3] target;
     bool[3] reservedTarget;
+    int[][] comboActions;
 
     string[] read() {
       string line = "";

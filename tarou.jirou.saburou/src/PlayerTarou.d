@@ -43,6 +43,7 @@ class PlayerTarou : Player {
         .setTchd(1000)
         .setGiri(1)
         .setTrgt(1500)
+        .setComb(300)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -56,6 +57,7 @@ class PlayerTarou : Player {
         .setTchd(1000)
         .setTrgt(1500)
         .setGiri(1)
+        .setComb(300)
 //        .setLand(20)
 //        .setMvat(22)
         .build();
@@ -71,6 +73,7 @@ class PlayerTarou : Player {
         .setTchd(1000)
         .setTrgt(1500)
         .setGiri(1)
+        .setComb(300)
 //        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
@@ -779,29 +782,34 @@ class PlayerTarou : Player {
         auto idx = bests[uniform(0, bests.length)].index;
         GameInfo best = histories[idx].getInfo();
         auto bestActions = histories[idx].getActions();
+        info.comboFlag &= best.remainCombo();
         /+
         if (best.samuraiInfo[best.weapon].hidden == 0 && best.isValid(9)) {
           best.doAction(9);
           bestActions ~= 9;
         }
         +/
-        for (int y = 0; y < 15; ++y) {
-          for (int x = 0; x < 15; ++x) {
-            if (naname2danger[y][x]) {
-              stderr.writef("%2d", naname2danger[y][x]);
-            } else {
-              stderr.write(" .");
+        debug {
+          for (int y = 0; y < 15; ++y) {
+            for (int x = 0; x < 15; ++x) {
+              if (naname2danger[y][x]) {
+                stderr.writef("%2d", naname2danger[y][x]);
+              } else {
+                stderr.write(" .");
+              }
+              if (y == best.samuraiInfo[best.weapon].curY
+                  && x == best.samuraiInfo[best.weapon].curX) {
+                stderr.write("*");
+              } else {
+                stderr.write(" ");
+              }
             }
-            if (y == best.samuraiInfo[best.weapon].curY
-                && x == best.samuraiInfo[best.weapon].curX) {
-              stderr.write("*");
-            } else {
-              stderr.write(" ");
-            }
+            stderr.writeln;
           }
-          stderr.writeln;
         }
         stderr.writefln("score = %f", max_score);
+        stderr.writeln(bestActions);
+        stderr.writeln("combo : ", info.comboFlag);
         best.weapon.writeln;
         "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
         

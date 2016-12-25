@@ -22,6 +22,7 @@ immutable class Merits {
     immutable double mvat; // moved after attack
     immutable double giri; // girigiri
     immutable double trgt; // target
+    immutable double comb; // combo
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -41,6 +42,7 @@ immutable class Merits {
         double mvat = 0;
         double giri = 0;
         double trgt = 0;
+        double comb = 0;
 
       public:
       pure:
@@ -114,6 +116,10 @@ immutable class Merits {
           this.trgt = trgt;
           return this;
         }
+        MeritsBuilder setComb(double comb) {
+          this.comb = comb;
+          return this;
+        }
     }
 
   private:
@@ -134,6 +140,7 @@ immutable class Merits {
       this.mvat = mb.mvat;
       this.giri = mb.giri;
       this.trgt = mb.trgt;
+      this.comb = mb.comb;
     }
 }
 
