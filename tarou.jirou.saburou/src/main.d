@@ -113,13 +113,15 @@ void beamStackSearch(GameInfo atom)
   bool[GameInfo] done;
   done[atom] = true;
   enum END = 6 * 8;
+  /+
   OldRedBlackTree!(Node, (a, b) {
     if (a.score != b.score) {
       return a.score > b.score;
     }
     return a.additional > b.additional;
   }, true)[END + 2] states;
-  // OldRedBlackTree!(Node, (a, b) => a.score + a.additional > b.score + b.additional, true)[END + 2] states;
+  +/
+  OldRedBlackTree!(Node, (a, b) => a.score + a.additional > b.score + b.additional, true)[END + 2] states;
   foreach (ref s; states) {
     s = new typeof(s);
   }
@@ -157,15 +159,15 @@ void beamStackSearch(GameInfo atom)
           }
           next.paintUsingHistory();
           done[next] = true;
-          // auto wao = nextRemitedStates(next);
-          // auto ket = wao.map!(a => a.getPreScore[0]).reduce!max;
+          auto wao = nextRemitedStates(next);
+          auto ket = wao.map!(a => a.getPreScore[0]).reduce!max;
           Node mode = new Node();
           auto ret = next.getPreScore();
           mode.score = node.score + ret[0];
-          // mode.additional = ket * 0.8 + uniform(0.0, 1.0);
+          mode.additional = ket * 0.8 + next.centerLevel * 0.001 + uniform(0.0, 0.001);
           // mode.additional = ret[1] + uniform(0.0, 1.0);
           // mode.additional = next.centerLevel + uniform(0.0, 1.0);
-          mode.additional = uniform(0.0, 1.0);
+          // mode.additional = uniform(0.0, 1.0);
           mode.info = next;
           mode.prev = node;
           states[turn + 2].insert(mode);
