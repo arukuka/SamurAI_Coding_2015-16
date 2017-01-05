@@ -759,13 +759,10 @@ class PlayerTarou : Player {
             nodes[i] = node(i, v);
           }
         } else {
-          //next UNCO-de
           foreach (i, next; histories) {
             HistoryTree next_root = new HistoryTree(null, next.info, 0);
             next_plan2(next_root);
             auto next_histories = next_root.collectEnd();
-            
-            auto next_weapon = uniform(0, 3);
             
             double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
             
