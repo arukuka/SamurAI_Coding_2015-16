@@ -115,7 +115,7 @@ class PlayerTarou : Player {
     static const Merits LAST_TURN_MERIT = new Merits.MeritsBuilder()
         .setTerr(20)
         .setUsur(25)
-        .setSelf(-5)
+        .setSelf(0)
         .build();
 
     static class HistoryTree {
@@ -447,6 +447,25 @@ class PlayerTarou : Player {
                   }
                   flag &= done;
                   flag &= diffCount == diffPrevCount[i];
+                  if (flag && info.field[y][x] == 8) {
+                    enum mawari = [
+                      [0, 1],
+                      [0, -1],
+                      [1, 0],
+                      [-1, 0]
+                    ];
+                    foreach (d; mawari) {
+                      int px = x + d[0];
+                      int py = y + d[1];
+                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                        continue;
+                      }
+                      if (3 <= info.field[y][x] && info.field[y][x] < 6) {
+                        arr ~= Point(px, py);
+                      }
+                    }
+                    continue;
+                  }
                   flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
                   if (flag) {
                     arr ~= Point(x, y);
@@ -470,14 +489,22 @@ class PlayerTarou : Player {
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
-            } else if (arr.length == 0) {
-              info.setProbPlaces(i, probPointDup[i]);
               probPointDup[i] = probPointDup[i].init;
+              info.setProbPlaces(i, probPointDup[i]);
+            } else if (arr.length == 0) {
+              if ( (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+                  || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+                  || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
+                probPointDup[i] = probPointDup[i].init;
+              }
+              info.setProbPlaces(i, probPointDup[i]);
             } else {
               info.setProbPlaces(i, arr);
               probPointDup[i] = arr;
             }
           } else {
+            probPointDup[i] = probPointDup[i].init;
+            info.setProbPlaces(i, probPointDup[i]);
             debug {
               stderr.writeln("I see ", i, " : (", si.curX, ", ", si.curY, ")");
             }
@@ -515,6 +542,8 @@ class PlayerTarou : Player {
             tegakari[i].x = info.samuraiInfo[i].curX;
             tegakari[i].y = info.samuraiInfo[i].curY;
             tegakari[i].count = 0;
+            probPointDup[i] = probPointDup[i].init;
+            info.setProbPlaces(i, probPointDup[i]);
             debug {
               stderr.writeln("\tchange ", i, " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
             }
@@ -602,6 +631,9 @@ class PlayerTarou : Player {
                 && 3 <= info.field[y][x] && info.field[y][x] < 6) {
               for (int j = 3; j < 6; ++j) {
                 if (info.samuraiInfo[j].curX != -1 || info.samuraiInfo[j].curY != -1) {
+                  continue;
+                }
+                if (probPointDup[i].length) {
                   continue;
                 }
                 if (Math.abs(x - tegakari[j].x) + Math.abs(y - tegakari[j].y) > (tegakari[j].count == 0 ? 0 : 3 + tegakari[j].count - 1)) {

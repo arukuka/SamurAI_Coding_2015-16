@@ -581,6 +581,9 @@ class GameInfo {
         if (p.x != -1 && p.y != -1) {
           safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
         }
+        foreach(pp; this.probPlaces[i]) {
+          safe = min(safe, isSafe(i, pp) ? 1.0 : 0.0);
+        }
       }
       return safe;
     }
