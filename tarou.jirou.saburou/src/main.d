@@ -163,8 +163,16 @@ void beamStackSearch(GameInfo atom)
           auto ket = wao.map!(a => a.getPreScore[0]).reduce!max;
           Node mode = new Node();
           auto ret = next.getPreScore();
-          mode.score = node.score + ret[0];
-          mode.additional = ket * 0.8 + next.centerLevel * 0.001 + uniform(0.0, 0.001);
+          // mode.score = node.score + ret[0];
+          // mode.additional = ket * 0.8 + next.centerLevel * 0.001 + uniform(0.0, 0.001);
+
+          if (turn + 2 < END + atom.side) {
+            mode.score = node.score + ret[0];
+            mode.additional = ket * 0.9 + next.centerLevel * 1e-3 + ret[1] * 1e-6 + uniform(0.0, 1e-9);
+          } else {
+            mode.score = node.score + ret[0];
+            mode.additional = uniform(0.0, 0.1);
+          }
           // mode.additional = ret[1] + uniform(0.0, 1.0);
           // mode.additional = next.centerLevel + uniform(0.0, 1.0);
           // mode.additional = uniform(0.0, 1.0);
