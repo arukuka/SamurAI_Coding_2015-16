@@ -790,7 +790,7 @@ class GameInfo {
       return false;
     }
     void findTarget() pure @safe nothrow {
-      if (this.side != 0) {
+      if (this.side != 0 && !this.samuraiInfo[this.weapon].hidden) {
         return;
       }
       foreach (f; this.reservedTarget) {
