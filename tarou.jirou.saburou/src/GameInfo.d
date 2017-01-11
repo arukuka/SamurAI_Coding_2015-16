@@ -573,7 +573,7 @@ class GameInfo {
       }
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
-        if (this.target[i - 3] || this.reservedTarget[i - 3]) {
+        if (this.target[i - 3] || (this.side == 0 && this.reservedTarget[i - 3])) {
           continue;
         }
         SamuraiInfo si = this.samuraiInfo[i];
