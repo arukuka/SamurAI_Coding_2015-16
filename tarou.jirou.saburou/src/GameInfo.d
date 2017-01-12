@@ -400,6 +400,7 @@ class GameInfo {
           + this.giriScore() * m.giri
           + this.existTarget() * m.trgt
           + this.remainCombo() * m.comb
+          + this.hasMuda() * m.muda
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -573,7 +574,7 @@ class GameInfo {
       }
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
-        if (this.target[i - 3] || (this.side == 0 && this.reservedTarget[i - 3])) {
+        if (this.target[i - 3]) {
           continue;
         }
         SamuraiInfo si = this.samuraiInfo[i];
@@ -793,9 +794,11 @@ class GameInfo {
       if (this.side != 0 && (isAttackContain || !this.samuraiInfo[this.weapon].hidden)) {
         return;
       }
-      foreach (f; this.reservedTarget) {
-        if (f) {
-          return;
+      if (isAttackContain || !this.samuraiInfo[this.weapon].hidden) {
+        foreach (f; this.reservedTarget) {
+          if (f) {
+            return;
+          }
         }
       }
       for (int i = 3; i < 6; ++i) {
@@ -907,6 +910,15 @@ class GameInfo {
     }
     void initTarget() pure @safe nothrow {
       this.target = false;
+    }
+    bool hasMuda() const pure @safe nothrow {
+      if (!isAttackContain) {
+        return false;
+      }
+      if (isMoveContain) {
+        return false;
+      }
+      return playerKill == 0 && selfCount == 0 && usurpCount == 0 && occupyCount == 0;
     }
     int[] actions;
     bool comboFlag;
