@@ -703,6 +703,7 @@ class PlayerTarou : Player {
         }
       }
       
+      info.initTarget();
       if (info.turn % 6 < 2) {
         this.target = false;
       }

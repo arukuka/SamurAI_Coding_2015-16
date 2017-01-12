@@ -905,6 +905,9 @@ class GameInfo {
       }
       return actions == comboActions[idx];
     }
+    void initTarget() pure @safe nothrow {
+      this.target = false;
+    }
     int[] actions;
     bool comboFlag;
  private:
