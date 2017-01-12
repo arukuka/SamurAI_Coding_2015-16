@@ -22,22 +22,13 @@ class PlayerTarou : Player {
     Point[][6] probPointDup;
     int[][3] prevActions = [[0], [0], [0]];
 
-    static const Merits DEFAULT_MERITS = new Merits.MeritsBuilder()
-        .setTerr(50)
-        .setSelf(0)
-        .setKill(3000)
-        .setHide(0.5)
-        .setSafe(2000)
-        .setUsur(40)
-        .setDepl(1)
-        .build();
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
-        .setTerr(50)
+        .setTerr(40)
         .setSelf(0)
         .setKill(100000)
         .setHide(0.5)
         .setSafe(5000)
-        .setUsur(40)
+        .setUsur(50)
         .setMidd(1)
         .setGrup(5)
         .setTchd(1000)
@@ -47,12 +38,12 @@ class PlayerTarou : Player {
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
-        .setTerr(50)
+        .setTerr(40)
         .setSelf(0)
         .setKill(100000)
         .setHide(0.5)
         .setSafe(5000)
-        .setUsur(40)
+        .setUsur(50)
         .setMidd(1)
         .setTchd(1000)
         .setTrgt(1500)
@@ -62,12 +53,12 @@ class PlayerTarou : Player {
 //        .setMvat(22)
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
-        .setTerr(50)
+        .setTerr(40)
         .setSelf(0)
         .setKill(100000)
         .setHide(0.5)
         .setSafe(5000)
-        .setUsur(40)
+        .setUsur(50)
         .setMidd(-1)
         .setGrup(5)
         .setTchd(1000)
@@ -82,28 +73,23 @@ class PlayerTarou : Player {
       BATTLEAX_MERITS
     ];
 
-    static const Merits NEXT_DEFAULT_MERITS = new Merits.MeritsBuilder()
-        .setTerr(20)
-        .setSelf(-5)
-        .setUsur(20)
-        .build();
     static const Merits NEXT_SPEAR_MERITS = new Merits.MeritsBuilder()
-        .setTerr(45)
+        .setTerr(36)
         .setSelf(0)
-        .setUsur(36)
+        .setUsur(45)
         .setMidd(1)
         .setGrup(1)
         .build();
     static const Merits NEXT_SWORD_MERITS = new Merits.MeritsBuilder()
-        .setTerr(45)
+        .setTerr(36)
         .setSelf(0)
-        .setUsur(36)
+        .setUsur(45)
         .setMidd(1)
         .build();
     static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
-        .setTerr(45)
+        .setTerr(36)
         .setSelf(0)
-        .setUsur(36)
+        .setUsur(45)
         .setMidd(1)
         .setGrup(1)
         .build();
@@ -114,7 +100,7 @@ class PlayerTarou : Player {
     ];
     static const Merits LAST_TURN_MERIT = new Merits.MeritsBuilder()
         .setTerr(20)
-        .setUsur(25)
+        .setUsur(40)
         .setSelf(0)
         .build();
 
