@@ -85,7 +85,7 @@ class GameInfo {
       this.yabasou = info.yabasou;
       this.korosisou = info.korosisou;
       this.target = info.target;
-      this.reservedTarget = info.target;
+      this.reservedTarget = info.reservedTarget;
       
       this.actions = info.actions.dup;
       
