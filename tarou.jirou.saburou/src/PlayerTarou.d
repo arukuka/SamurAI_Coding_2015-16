@@ -436,7 +436,7 @@ class PlayerTarou : Player {
                   }
                   flag &= done;
                   flag &= diffCount == diffPrevCount[i];
-                  if (flag && info.field[y][x] == 8) {
+                  if (flag && (info.field[y][x] < 3 || info.field[y][x] == 8)) {
                     enum mawari = [
                       [0, 1],
                       [0, -1],
