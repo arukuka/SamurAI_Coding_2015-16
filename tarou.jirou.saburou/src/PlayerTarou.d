@@ -437,23 +437,33 @@ class PlayerTarou : Player {
                   flag &= done;
                   flag &= diffCount == diffPrevCount[i];
                   if (flag && (info.field[y][x] < 3 || info.field[y][x] == 8)) {
-                    enum mawari = [
-                      [0, 1],
-                      [0, -1],
-                      [1, 0],
-                      [-1, 0]
-                    ];
-                    foreach (d; mawari) {
-                      int px = x + d[0];
-                      int py = y + d[1];
-                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
-                        continue;
-                      }
-                      if (3 <= info.field[py][px] && info.field[py][px] < 6) {
-                        arr ~= Point(px, py);
+                    bool arieru = true;
+                    if (fieldDup[y][x] != 9) {
+                      with (samuraiDup[i]) {
+                        if (curX == -1 || curY == -1) {
+                          arieru = false;
+                        }
                       }
                     }
-                    continue;
+                    if (arieru) {
+                      enum mawari = [
+                        [0, 1],
+                        [0, -1],
+                        [1, 0],
+                        [-1, 0]
+                      ];
+                      foreach (d; mawari) {
+                        int px = x + d[0];
+                        int py = y + d[1];
+                        if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                          continue;
+                        }
+                        if (3 <= info.field[py][px] && info.field[py][px] < 6) {
+                          arr ~= Point(px, py);
+                        }
+                      }
+                      continue;
+                    }
                   }
                   flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
                   if (flag) {
@@ -547,6 +557,13 @@ class PlayerTarou : Player {
         }
       }
 
+      debug {
+        for (int i = 3; i < 6; ++i) {
+          stderr.writeln("(", i, ")");
+          stderr.writefln("  %d, %d", info.samuraiInfo[i].curX, info.samuraiInfo[i].curY);
+          stderr.writeln("  ", probPointDup[i]);
+        }
+      }
     }
     struct Tegakari {
       int x, y;
