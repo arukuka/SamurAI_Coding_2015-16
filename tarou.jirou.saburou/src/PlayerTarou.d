@@ -449,7 +449,7 @@ class PlayerTarou : Player {
                       if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
                         continue;
                       }
-                      if (3 <= info.field[y][x] && info.field[y][x] < 6) {
+                      if (3 <= info.field[py][px] && info.field[py][px] < 6) {
                         arr ~= Point(px, py);
                       }
                     }
