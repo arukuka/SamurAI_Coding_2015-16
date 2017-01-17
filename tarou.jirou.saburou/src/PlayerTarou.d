@@ -106,6 +106,11 @@ class PlayerTarou : Player {
         .setUsur(40)
         .setSelf(0)
         .build();
+    static const Merits MERITS4ENEMY = new Merits.MeritsBuilder()
+        .setTerr(45)
+        .setUsur(50)
+        .setSelf(0)
+        .build();
 
     static class HistoryTree {
       private:
@@ -728,6 +733,48 @@ class PlayerTarou : Player {
         this.target = false;
       }
       
+      // 相手から見えるフィールド情報
+      int[][] field4E = info.field.map!(a => a.dup).array;
+      for (int i = 0; i < info.height; ++i) {
+        for (int j = 0; j < info.width; ++j) {
+          if (field4E[i][j] < 6) {
+            field4E[i][j] = (field4E[i][j] + 3) % 6;
+          } else if (field4E[i][j] == 9) {
+            field4E[i][j] = 0;
+          }
+        }
+      }
+      GameInfo info4E = new GameInfo(info);
+      info4E.field = field4E;
+      for (int i = 0; i < 3; ++i) {
+        SamuraiInfo tmp = info4E.samuraiInfo[i];
+        info4E.samuraiInfo[i] = info4E.samuraiInfo[i + 3];
+        info4E.samuraiInfo[i + 3] = tmp;
+      }
+      bool[][] tugikuruDanger = new bool[][](info.height, info.width);
+      for (int i = 0; i < 3; ++i) {
+        with (info4E.samuraiInfo[i]) {
+          if (curX == -1 || curY == -1) {
+            continue;
+          }
+          GameInfo jnfo = new GameInfo(info4E);
+          jnfo.weapon = i;
+          HistoryTree root = new HistoryTree(null, jnfo, 0);
+          next_plan2(root);
+          
+          auto histories = root.collect();
+          auto max_score = histories.map!(a => a.getInfo().score(MERITS4ENEMY)).reduce!max;
+          auto bests = histories.filter!(a => a.getInfo().score(MERITS4ENEMY) == max_score).array;
+          foreach (best; bests) {
+            foreach (panel; best.getInfo.getOccupiedPointsArray) {
+              auto point = panel.key;
+              tugikuruDanger[point.y][point.x] = true;
+            }
+          }
+        }
+      }
+      info.setTugikuruDanger = tugikuruDanger;
+      
       HistoryTree[] histories = HistoryTree[].init;
       
       /+
@@ -842,6 +889,22 @@ class PlayerTarou : Player {
             }
             stderr.writeln;
           }
+        }
+        for (int y = 0; y < 15; ++y) {
+          for (int x = 0; x < 15; ++x) {
+            if (tugikuruDanger[y][x]) {
+              stderr.write(" x");
+            } else {
+              stderr.write(" .");
+            }
+            if (y == best.samuraiInfo[best.weapon].curY
+                && x == best.samuraiInfo[best.weapon].curX) {
+              stderr.write("*");
+            } else {
+              stderr.write(" ");
+            }
+          }
+          stderr.writeln;
         }
         stderr.writefln("score = %f", max_score);
         stderr.writeln(bestActions);

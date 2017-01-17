@@ -91,6 +91,8 @@ class GameInfo {
       
       this.comboFlag = info.comboFlag;
       this.comboActions = info.comboActions;
+      
+      this.tugikuruDanger = info.tugikuruDanger;
     }
     
     this() {
@@ -572,6 +574,20 @@ class GameInfo {
           return 0.0;
         }
       }
+      bool daijoubu = false;
+      if (this.side == 0) {
+        bool hajimete = true;
+        for (int i = 0; i < 3; ++i) {
+          hajimete &= !this.reservedTarget[i];
+        }
+        daijoubu = hajimete;
+      }
+      with (this.samuraiInfo[this.weapon]) {
+        if (tugikuruDanger[curY][curX] && !daijoubu) {
+          return 0.0;
+        }
+      }
+      
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
         if (this.target[i - 3]) {
@@ -922,6 +938,12 @@ class GameInfo {
     }
     int[] actions;
     bool comboFlag;
+    auto getOccupiedPointsArray() const pure @safe {
+      return occupiedPointsArray.idup;
+    }
+    void setTugikuruDanger(bool[][] d) pure @safe nothrow {
+      this.tugikuruDanger = d;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -943,6 +965,7 @@ class GameInfo {
     bool[3] target;
     bool[3] reservedTarget;
     int[][] comboActions;
+    bool[][] tugikuruDanger;
 
     string[] read() {
       string line = "";
