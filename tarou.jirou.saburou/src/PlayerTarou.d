@@ -402,6 +402,16 @@ class PlayerTarou : Player {
             }
           }
         }
+        for (int i = 3; i < 6; ++i) {
+          Point[] arr = [];
+          foreach (p; probPointDup[i]) {
+            int v = info.field[p.y][p.x];
+            if ((3 <= v && v < 6) || v == 9) {
+              arr ~= p;
+            }
+          }
+          probPointDup[i] = arr;
+        }
 
         for (int i = 3; i < 6; ++i) {
           auto si = info.samuraiInfo[i];
@@ -494,6 +504,18 @@ class PlayerTarou : Player {
               if ( (info.samuraiInfo[i].done && !samuraiMemory[i].done)
                   || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
                   || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
+                probPointDup[i] = probPointDup[i].init;
+              }
+              if (probPointDup[i].length == 1) {
+                Point p = probPointDup[i].front;
+                int x = p.x;
+                int y = p.y;
+                debug {
+                  stderr.writeln("\t\tfinally got it! : ", p);
+                }
+                si.curX = x;
+                si.curY = y;
+                info.samuraiInfo[i] = si;
                 probPointDup[i] = probPointDup[i].init;
               }
               info.setProbPlaces(i, probPointDup[i]);

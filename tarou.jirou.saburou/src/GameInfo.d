@@ -401,6 +401,7 @@ class GameInfo {
           + this.existTarget() * m.trgt
           + this.remainCombo() * m.comb
           + this.hasMuda() * m.muda
+          + this.chopCount * m.chop
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -925,6 +926,17 @@ class GameInfo {
     }
     int[] actions;
     bool comboFlag;
+    int chopCount() const pure @safe nothrow {
+      int cnt = 0;
+      for (int i = 3; i < 6; ++i) {
+        foreach (p; probPlaces[i]) {
+          if (get(p.x, p.y) < 3) {
+            ++cnt;
+          }
+        }
+      }
+      return cnt;
+    }
  private:
     int occupyCount;
     int playerKill;
