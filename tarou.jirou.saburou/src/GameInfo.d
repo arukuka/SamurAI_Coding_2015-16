@@ -91,6 +91,8 @@ class GameInfo {
       
       this.comboFlag = info.comboFlag;
       this.comboActions = info.comboActions;
+      
+      this.beActive = info.beActive;
     }
     
     this() {
@@ -563,13 +565,15 @@ class GameInfo {
     }
 
     double safeLevel() const pure nothrow @safe {
-      if (yabasou[this.weapon]) {
-        if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
-          return 0.0;
-        }
-      } else {
-        if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
-          return 0.0;
+      if (!beActive[this.weapon]) {
+        if (yabasou[this.weapon]) {
+          if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
+            return 0.0;
+          }
+        } else {
+          if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
+            return 0.0;
+          }
         }
       }
       double safe = 1.0;
@@ -925,6 +929,9 @@ class GameInfo {
     }
     int[] actions;
     bool comboFlag;
+    void setBeActive(bool[3] beActive) pure @safe nothrow {
+      this.beActive = beActive;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -946,6 +953,7 @@ class GameInfo {
     bool[3] target;
     bool[3] reservedTarget;
     int[][] comboActions;
+    bool[3] beActive;
 
     string[] read() {
       string line = "";
