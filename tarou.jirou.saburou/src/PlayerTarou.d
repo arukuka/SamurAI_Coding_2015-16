@@ -105,6 +105,7 @@ class PlayerTarou : Player {
         .setTerr(20)
         .setUsur(40)
         .setSelf(0)
+        .setLskl(10000)
         .build();
 
     static class HistoryTree {

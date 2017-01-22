@@ -403,6 +403,7 @@ class GameInfo {
           + this.existTarget() * m.trgt
           + this.remainCombo() * m.comb
           + this.hasMuda() * m.muda
+          + this.temeehadameda() * m.lskl
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -934,6 +935,15 @@ class GameInfo {
     bool comboFlag;
     void setBeActive(bool[3] beActive) pure @safe nothrow {
       this.beActive = beActive;
+    }
+    int temeehadameda() const pure @safe nothrow {
+      int cnt = 0;
+      for (int i = 3; i < 6; ++i) {
+        if (!samuraiInfo[i].done && isKilled[i - 3]) {
+          ++cnt;
+        }
+      }
+      return cnt;
     }
  private:
     int occupyCount;
