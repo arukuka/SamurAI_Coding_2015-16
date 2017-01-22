@@ -404,6 +404,7 @@ class GameInfo {
           + this.remainCombo() * m.comb
           + this.hasMuda() * m.muda
           + this.temeehadameda() * m.lskl
+          + this.isZako() * m.zako
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -944,6 +945,9 @@ class GameInfo {
         }
       }
       return cnt;
+    }
+    bool isZako() const pure @safe nothrow {
+      return occupyCount + usurpCount <= 2;
     }
  private:
     int occupyCount;

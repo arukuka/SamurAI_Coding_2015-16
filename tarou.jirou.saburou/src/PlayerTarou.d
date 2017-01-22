@@ -36,6 +36,7 @@ class PlayerTarou : Player {
         .setTrgt(1500)
         .setComb(300)
         .setMuda(-1)
+        .setZako(-100)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
