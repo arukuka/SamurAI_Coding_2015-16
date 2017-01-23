@@ -947,6 +947,17 @@ class GameInfo {
       return cnt;
     }
     bool isZako() const pure @safe nothrow {
+      if (occupyCount + usurpCount == 0) {
+        int moveCount = 0;
+        foreach (v; actions) {
+          if (4 <= v && v <= 8) {
+            ++moveCount;
+          }
+        }
+        if (moveCount == 3) {
+          return false;
+        }
+      }
       return occupyCount + usurpCount <= 2;
     }
  private:
