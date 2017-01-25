@@ -36,6 +36,7 @@ class PlayerTarou : Player {
         .setTrgt(1500)
         .setComb(300)
         .setMuda(-1)
+        .setZako(-100)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -105,6 +106,7 @@ class PlayerTarou : Player {
         .setTerr(20)
         .setUsur(40)
         .setSelf(0)
+        .setLskl(10000)
         .build();
     static const Merits MERITS4ENEMY = new Merits.MeritsBuilder()
         .setTerr(45)
@@ -617,12 +619,15 @@ class PlayerTarou : Player {
       search(info);
       
       int[][] naname2danger = new int[][](15, 15);
+      bool[3] beActive;
       bool[3] yabasou;
+      bool[3] yabe;
       for (int i = 0; i < 3; ++i) {
         bool yaba = false;
         foreach (v; prevActions[i]) {
           yaba |= 1 <= v && v <= 4;
         }
+        yabe[i] = yaba;
         enum ofs = [
           [ [-2, -2], [-2, 2], [2, -2], [2, 2] ],
           [ [-4, 0], [-3, -1], [-2, -2], [-1, -3], [0, -4], 
@@ -690,6 +695,9 @@ class PlayerTarou : Player {
       for (int i = 0; i < 3; ++i) {
         if (naname2danger[info.samuraiInfo[i].curY][info.samuraiInfo[i].curX]) {
           yabasou[i] = true;
+          if (!yabe[i] && info.samuraiInfo[i].hidden == 1) {
+            beActive[i] = true;
+          }
           /+
           enum ofs = [
                                           [0, -3],
@@ -713,6 +721,8 @@ class PlayerTarou : Player {
       }
       info.setNaname2Danger(naname2danger);
       info.setYabasou(yabasou);
+      info.setBeActive(beActive);
+      stderr.writeln("be active : ", beActive);
       bool[3] korosisou = true;
       for (int i = 0; i < 3; ++i) {
         foreach (v; prevActions[i]) {

@@ -93,6 +93,8 @@ class GameInfo {
       this.comboActions = info.comboActions;
       
       this.tugikuruDanger = info.tugikuruDanger;
+      
+      this.beActive = info.beActive;
     }
     
     this() {
@@ -403,6 +405,8 @@ class GameInfo {
           + this.existTarget() * m.trgt
           + this.remainCombo() * m.comb
           + this.hasMuda() * m.muda
+          + this.temeehadameda() * m.lskl
+          + this.isZako() * m.zako
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -565,13 +569,15 @@ class GameInfo {
     }
 
     double safeLevel() const pure nothrow @safe {
-      if (yabasou[this.weapon]) {
-        if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
-          return 0.0;
-        }
-      } else {
-        if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
-          return 0.0;
+      if (!beActive[this.weapon]) {
+        if (yabasou[this.weapon]) {
+          if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
+            return 0.0;
+          }
+        } else {
+          if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
+            return 0.0;
+          }
         }
       }
       bool daijoubu = false;
@@ -599,6 +605,9 @@ class GameInfo {
           safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
         }
         foreach(pp; this.probPlaces[i]) {
+          if (get(pp.x, pp.y) < 3) {
+            continue;
+          }
           safe = min(safe, isSafe(i, pp) ? 1.0 : 0.0);
         }
       }
@@ -825,6 +834,9 @@ class GameInfo {
         if (si.curX == -1 || si.curY == -1) {
           continue;
         }
+        if (si.curX == si.homeX && si.curY == si.homeY) {
+          continue;
+        }
         // is in kill zone
         SamuraiInfo me = this.samuraiInfo[this.weapon];
         Point sip = Point(si.curX, si.curY);
@@ -944,6 +956,32 @@ class GameInfo {
     void setTugikuruDanger(bool[][] d) pure @safe nothrow {
       this.tugikuruDanger = d;
     }
+    void setBeActive(bool[3] beActive) pure @safe nothrow {
+      this.beActive = beActive;
+    }
+    int temeehadameda() const pure @safe nothrow {
+      int cnt = 0;
+      for (int i = 3; i < 6; ++i) {
+        if (!samuraiInfo[i].done && isKilled[i - 3]) {
+          ++cnt;
+        }
+      }
+      return cnt;
+    }
+    bool isZako() const pure @safe nothrow {
+      if (occupyCount + usurpCount == 0) {
+        int moveCount = 0;
+        foreach (v; actions) {
+          if (4 <= v && v <= 8) {
+            ++moveCount;
+          }
+        }
+        if (moveCount == 3) {
+          return false;
+        }
+      }
+      return occupyCount + usurpCount <= 2;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -965,7 +1003,9 @@ class GameInfo {
     bool[3] target;
     bool[3] reservedTarget;
     int[][] comboActions;
+    
     bool[][] tugikuruDanger;
+    bool[3] beActive;
 
     string[] read() {
       string line = "";
