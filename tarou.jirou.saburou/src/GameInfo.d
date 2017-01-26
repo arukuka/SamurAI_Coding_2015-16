@@ -405,6 +405,7 @@ class GameInfo {
           + this.hasMuda() * m.muda
           + this.temeehadameda() * m.lskl
           + this.isZako() * m.zako
+          + this.kasanari * (-50)
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -960,6 +961,18 @@ class GameInfo {
       }
       return occupyCount + usurpCount <= 2;
     }
+    void miruKasanari(PlayerTarou.HistoryTree[3] nuri) {
+      bool[Point] set;
+      int cnt = occupyCount + selfCount + usurpCount;
+      foreach (h; nuri) {
+        auto g = h.getInfo;
+        foreach (p; g.occupiedPointsArray) {
+          set[p.key] = true;
+        }
+        cnt += g.occupyCount + g.selfCount + g.usurpCount;
+      }
+      kasanari = cnt - cast(int)set.length;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -982,6 +995,7 @@ class GameInfo {
     bool[3] reservedTarget;
     int[][] comboActions;
     bool[3] beActive;
+    int kasanari;
 
     string[] read() {
       string line = "";

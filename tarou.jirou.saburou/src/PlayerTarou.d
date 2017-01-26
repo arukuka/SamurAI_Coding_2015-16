@@ -815,6 +815,19 @@ class PlayerTarou : Player {
             
             double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
             
+            HistoryTree[3] nuri;
+            for (int j = 0; j < 3; ++j) {
+              GameInfo jnfo = new GameInfo(next.info);
+              jnfo.weapon = j;
+              HistoryTree r = new HistoryTree(null, jnfo, 0);
+              next_plan2(r);
+              auto h = r.collectEnd();
+              auto s = 0.0.reduce!max(h.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[j])));
+              auto b = h.filter!(a  => a.getInfo().score(NEXT_MERITS4WEAPON[j]) == s).front;
+              nuri[j] = b;
+            }
+            next.getInfo().miruKasanari(nuri);
+            
             next.getInfo().findTarget();
 
             double v = next.getInfo().score(MERITS4WEAPON[next.getInfo().weapon])
