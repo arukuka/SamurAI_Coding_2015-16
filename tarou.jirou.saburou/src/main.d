@@ -138,9 +138,9 @@ void beamStackSearch(GameInfo atom)
   a.info = atom;
   states[atom.side].insert(a);
   Mutex im = new Mutex;
+  Mutex dm = new Mutex;
   shared int warihuri = atom.side;
   for (int t = atom.side; t < END; t += 2) {
-    immutable TURN = t;
     tg.create( () {
       int turn;
       synchronized (im) {
@@ -158,6 +158,7 @@ void beamStackSearch(GameInfo atom)
           }
         }
         if (node is null) {
+          Thread.sleep(dur!"msecs"(100));
           continue;
         }
         auto info = new GameInfo(node.info);
@@ -166,11 +167,17 @@ void beamStackSearch(GameInfo atom)
         info.resetPreScore;
         auto nexts = nextAllStates(info);
         foreach (next; nexts) {
-          if (next in done) {
+          bool yatta = false;
+          synchronized (dm) {
+            if (next in done) {
+              yatta = true;
+            }
+            done[next] = true;
+          }
+          if (yatta) {
             continue;
           }
           next.paintUsingHistory();
-          done[next] = true;
           auto wao = nextRemitedStates(next);
           auto ket = wao.map!(a => a.getPreScore[0]).reduce!max;
           Node mode = new Node();
@@ -206,6 +213,7 @@ void beamStackSearch(GameInfo atom)
       }
     }
     if (node is null) {
+      Thread.sleep(dur!"msecs"(100));
       continue;
     }
     auto g = node.info;
@@ -236,6 +244,7 @@ void beamStackSearch(GameInfo atom)
       }
       f.writeln;
     }
+    f.close();
   }
 }
 
