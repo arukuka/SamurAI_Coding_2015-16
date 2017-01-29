@@ -108,6 +108,7 @@ import std.algorithm : max, map, reduce;
 import std.random : randomShuffle, uniform;
 import core.time;
 import std.datetime;
+import core.thread, core.sync.mutex;
 void beamStackSearch(GameInfo atom)
 {
   bool[GameInfo] done;
@@ -122,32 +123,43 @@ void beamStackSearch(GameInfo atom)
   }, true)[END + 2] states;
   +/
   OldRedBlackTree!(Node, (a, b) => a.score + a.additional > b.score + b.additional, true)[END + 2] states;
+  Mutex[END + 2] mutexes;
   foreach (ref s; states) {
     s = new typeof(s);
   }
+  foreach (ref m; mutexes) {
+    m = new Mutex;
+  }
+  auto tg = new ThreadGroup;
+  int[200] counters;
   Node a = new Node();
   a.score = 0;
   a.additional = 0;
   a.info = atom;
   states[atom.side].insert(a);
-  enum BEAM_WIDTH = 1;
-  StopWatch sw;
-  sw.start();
-  for (int n = 0; ; ++n) {
-    sw.stop();
-    auto dur = sw.peek();
-    if (dur.seconds >= 7) {
-      break;
-    }
-    sw.start();
-    int weapon = 1;
-    for (int turn = atom.side; turn < END; turn += 2) {
-      for (int i = 0; i < BEAM_WIDTH; ++i) {
-        if (states[turn].length == 0) {
+  Mutex im = new Mutex;
+  shared int warihuri = atom.side;
+  for (int t = atom.side; t < END; t += 2) {
+    immutable TURN = t;
+    tg.create( () {
+      int turn;
+      synchronized (im) {
+        turn = warihuri;
+        warihuri += 2;
+      }
+      immutable weapon = (1 + turn / 2) % 3;
+      stderr.writefln("turn %d start!", turn);
+      while (true) {
+        Node node = null;
+        synchronized (mutexes[turn]) {
+          if (states[turn].length) {
+            node = states[turn].front;
+            states[turn].removeFront;
+          }
+        }
+        if (node is null) {
           continue;
         }
-        Node node = states[turn].front;
-        states[turn].removeFront;
         auto info = new GameInfo(node.info);
         info.initActions;
         info.weapon = weapon;
@@ -178,37 +190,52 @@ void beamStackSearch(GameInfo atom)
           // mode.additional = uniform(0.0, 1.0);
           mode.info = next;
           mode.prev = node;
-          states[turn + 2].insert(mode);
+          synchronized (mutexes[turn + 2]) {
+            states[turn + 2].insert(mode);
+          }
         }
       }
-      ++weapon;
-      weapon %= 3;
+    });
+  }
+  while (1) {
+    Node node = null;
+    synchronized (mutexes[END + atom.side]) {
+      if (states[END + atom.side].length) {
+        node = states[END + atom.side].front;
+        states[END + atom.side].removeFront;
+      }
     }
-    // debug{
-      auto g = states[END + atom.side].front.info;
-      stderr.writefln("#%4d: score = %d", n, states[END + atom.side].front.score);
-      for (int i = 0; i < g.height; ++i) {
-        for (int j = 0; j < g.width; ++j) {
-          stderr.write(' ', g.field[i][j], ' ');
-        }
-        stderr.writeln;
+    if (node is null) {
+      continue;
+    }
+    auto g = node.info;
+    auto s = node.score;
+    auto index = counters[s]++;
+    import std.conv : to;
+    string fn = s.to!string ~ "-" ~ index.to!string;
+    stderr.writeln(fn);
+    auto f = File("combo/" ~ fn ~ ".txt", "w");
+    for (int i = 0; i < g.height; ++i) {
+      for (int j = 0; j < g.width; ++j) {
+        f.write(' ', g.field[i][j], ' ');
       }
-      stderr.writeln = g.actions;
-      stderr.writeln = states[END + atom.side].front.prev.prev.prev.info.actions;
-      stderr.writeln = states[END + atom.side].front.prev.prev.prev.prev.prev.prev.info.actions;
-    // }
+      f.writeln;
+    }
+    int[][] actions;
+    Node ite = node;
+    while (ite.prev !is null) {
+      actions = ite.info.actions ~ actions;
+      ite = ite.prev;
+    }
+    foreach (action; actions) {
+      foreach (i, v; action) {
+        if (i) {
+          f.write(" ");
+        }
+        f.write(v);
+      }
+      f.writeln;
+    }
   }
-  int[][] actions;
-  Node ite = states[END + atom.side].front;
-  while (ite.prev !is null) {
-    actions = ite.info.actions ~ actions;
-    ite = ite.prev;
-  }
-  int idx = atom.side;
-  foreach (action; actions) {
-    stderr.writeln("turn ", idx, " : ", action);
-    idx += 2;
-  }
-  atom.setComboActions(actions);
 }
 
