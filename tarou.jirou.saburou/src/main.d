@@ -6,8 +6,8 @@ void main(string[] args)
 {
   GameInfo info = new GameInfo();
   PlayerTarou p = new PlayerTarou(info);
-  
-  beamStackSearch(info);
+
+  readCombo(info, args[1 + info.side]);
   
   0.writeln;
   stdout.flush;
@@ -211,4 +211,23 @@ void beamStackSearch(GameInfo atom)
   }
   atom.setComboActions(actions);
 }
+
+import std.string;
+import std.conv;
+import std.array;
+
+void readCombo(GameInfo info, string fn)
+{
+  auto f = File(fn, "r");
+  int[][] actions;
+  for (;;) {
+    string l = f.readln;
+    if (l.length == 0) {
+      break;
+    }
+    actions ~= l.chomp.split.map!(to!int).array;
+  }
+  info.setComboActions(actions);
+}
+
 
