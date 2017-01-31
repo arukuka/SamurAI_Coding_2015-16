@@ -829,6 +829,9 @@ class GameInfo {
         if (si.curX == si.homeX && si.curY == si.homeY) {
           continue;
         }
+        if (reservedTarget[i - 3]) {
+          continue;
+        }
         // is in kill zone
         SamuraiInfo me = this.samuraiInfo[this.weapon];
         Point sip = Point(si.curX, si.curY);
