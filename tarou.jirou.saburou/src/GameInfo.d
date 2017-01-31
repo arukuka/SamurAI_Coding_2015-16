@@ -206,7 +206,7 @@ class GameInfo {
             if ( i == this.weapon ) {
               continue;
             }
-            if ( x == s.curX && y == s.curY ) {
+            if ( x == s.curX && y == s.curY && me.hidden == 0 && s.hidden == 0 ) {
               return false;
             }
             if ( x == s.homeX && y == s.homeY ) {
