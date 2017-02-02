@@ -914,22 +914,31 @@ class GameInfo {
       occupyCount = 0;
       groupLevel = 0;
     }
-    void setComboActions(int[][] comboActions) pure @safe nothrow {
-      this.comboActions = comboActions;
+    void setComboActions(int[][] acts) pure @safe nothrow {
+      this.comboActions = (this.comboActions).init;
+      for (int p = 0; p < turns / 6; ++p) {
+        if (p * 3 + 2 >= acts.length) {
+          break;
+        }
+        Nmoo hai = Nmoo.init;
+        enum s = 1;
+        for (int i = 0; i < 3; ++i) {
+          int w = (s + i) % 3;
+          int idx = p * 3 + i;
+          hai[w] = acts[idx];
+        }
+        this.comboActions ~= hai;
+      }
     }
     bool remainCombo() const pure @safe nothrow {
-      if (!comboFlag) {
+      if (!comboFlag[this.weapon]) {
         return false;
       }
-      int idx = this.turn / 2;
-      if (idx >= comboActions.length) {
+      int period = this.turn / 6;
+      if (period >= comboActions.length) {
         return false;
       }
-      int w = (idx + 1) % 3;
-      if (w != this.weapon) {
-        return false;
-      }
-      return actions == comboActions[idx];
+      return actions == comboActions[period][this.weapon];
     }
     void initTarget() pure @safe nothrow {
       this.target = false;
@@ -944,7 +953,7 @@ class GameInfo {
       return playerKill == 0 && selfCount == 0 && usurpCount == 0 && occupyCount == 0;
     }
     int[] actions;
-    bool comboFlag;
+    bool[3] comboFlag;
     void setBeActive(bool[3] beActive) pure @safe nothrow {
       this.beActive = beActive;
     }
@@ -991,7 +1000,8 @@ class GameInfo {
     bool[3] korosisou;
     bool[3] target;
     bool[3] reservedTarget;
-    int[][] comboActions;
+    alias int[][3] Nmoo;
+    Nmoo[] comboActions;
     bool[3] beActive;
 
     string[] read() {

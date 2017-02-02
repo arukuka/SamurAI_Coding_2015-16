@@ -825,7 +825,7 @@ class PlayerTarou : Player {
         auto idx = bests[uniform(0, bests.length)].index;
         GameInfo best = histories[idx].getInfo();
         auto bestActions = histories[idx].getActions();
-        info.comboFlag &= best.remainCombo();
+        info.comboFlag[best.weapon] &= best.remainCombo();
         /+
         if (best.samuraiInfo[best.weapon].hidden == 0 && best.isValid(9)) {
           best.doAction(9);
