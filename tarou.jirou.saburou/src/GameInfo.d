@@ -208,7 +208,7 @@ class GameInfo {
             if ( i == this.weapon ) {
               continue;
             }
-            if ( x == s.curX && y == s.curY ) {
+            if ( x == s.curX && y == s.curY && me.hidden == 0 && s.hidden == 0 ) {
               return false;
             }
             if ( x == s.homeX && y == s.homeY ) {
@@ -596,12 +596,20 @@ class GameInfo {
       
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
-        if (this.target[i - 3]) {
-          continue;
-        }
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
+        if (this.target[i - 3]) {
+          safe = min(safe, isSafe(i, p) ? 1.0 : 0.96);
+          continue;
+        }
         if (p.x != -1 && p.y != -1) {
+          if (this.side == 1 && !si.done) {
+            SamuraiInfo me = this.samuraiInfo[this.weapon];
+            immutable Point mep = Point(me.curX, me.curY);
+            safe = min(safe, isSafeW2T(mep, p, i)
+                || (!isAttackContain && me.hidden && isSafeW2A(mep, p, i))
+                ? 1.0 : 0.0);
+          }
           safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
         }
         foreach(pp; this.probPlaces[i]) {
@@ -835,6 +843,9 @@ class GameInfo {
           continue;
         }
         if (si.curX == si.homeX && si.curY == si.homeY) {
+          continue;
+        }
+        if (reservedTarget[i - 3]) {
           continue;
         }
         // is in kill zone
