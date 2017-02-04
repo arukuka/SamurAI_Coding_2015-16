@@ -4,10 +4,15 @@ import std.stdio;
 
 void main(string[] args)
 {
+  assert (args.length == 4);
+  import std.conv;
+  import std.random;
+  int s = args[1].to!int;
+  rndGen.seed = s;
   GameInfo info = new GameInfo();
   PlayerTarou p = new PlayerTarou(info);
 
-  readCombo(info, args[1 + info.side]);
+  readCombo(info, args[2 + info.side]);
   
   0.writeln;
   stdout.flush;
