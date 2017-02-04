@@ -4,6 +4,12 @@ import std.stdio;
 
 void main(string[] args)
 {
+  if (args.length == 2) {
+    import std.conv;
+    import std.random;
+    int s = args[1].to!int;
+    rndGen.seed = s;
+  }
   GameInfo info = new GameInfo();
   PlayerTarou p = new PlayerTarou(info);
   
