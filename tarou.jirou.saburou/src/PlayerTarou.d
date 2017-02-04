@@ -33,6 +33,7 @@ class PlayerTarou : Player {
         .setGrup(5)
         .setGiri(1)
         .setTrgt(1500)
+        .setYsnk(1000)
         .setComb(300)
         .setMuda(-1)
         .setZako(-100)
@@ -759,6 +760,7 @@ class PlayerTarou : Player {
         info4E.samuraiInfo[i + 3] = tmp;
       }
       bool[][] tugikuruDanger = new bool[][](info.height, info.width);
+      int[][] tugikuruTokoro = new int[][](info.height, info.width);
       for (int i = 0; i < 3; ++i) {
         with (info4E.samuraiInfo[i]) {
           if (curX == -1 || curY == -1) {
@@ -772,15 +774,55 @@ class PlayerTarou : Player {
           auto histories = root.collect();
           auto max_score = histories.map!(a => a.getInfo().score(MERITS4ENEMY)).reduce!max;
           auto bests = histories.filter!(a => a.getInfo().score(MERITS4ENEMY) == max_score).array;
+          bool[Point] set;
           foreach (best; bests) {
             foreach (panel; best.getInfo.getOccupiedPointsArray) {
               auto point = panel.key;
               tugikuruDanger[point.y][point.x] = true;
             }
+            with (best.getInfo.samuraiInfo[i]) {
+              set[Point(curX, curY)] = true;
+            }
+          }
+          if (set.length == 1) {
+            auto p = set.keys.front;
+            tugikuruTokoro[p.y][p.x] = i + 3;
           }
         }
       }
       info.setTugikuruDanger = tugikuruDanger;
+      
+      int[][][] yasyaNoKamae = new int[][][](3, info.height, info.width);
+      for (int i = 0; i < 3; ++i) {
+        for (int y = 0; y < info.height; ++y) {
+          for (int x = 0; x < info.width; ++x) {
+            with (info.samuraiInfo[i]) {
+              if (Math.abs(curX - x) + Math.abs(curY - y) > 3) {
+                continue;
+              }
+            }
+            if (info.field[y][x] >= 3) {
+              continue;
+            }
+            auto g = new GameInfo(info);
+            g.weapon = i;
+            g.samuraiInfo[i].curX = x;
+            g.samuraiInfo[i].curY = y;
+            auto r = new HistoryTree(null, g, 0);
+            next_plan2(r);
+            auto h = r.collect;
+            foreach (n; h) {
+              foreach (panel; n.getInfo.getOccupiedPointsArray) {
+                auto point = panel.key;
+                if (tugikuruTokoro[point.y][point.x] >= 3) {
+                  yasyaNoKamae[i][y][x] = tugikuruTokoro[point.y][point.x];
+                }
+              }
+            }
+          }
+        }
+      }
+      info.setYasyaNoKamae = yasyaNoKamae;
       
       HistoryTree[] histories = HistoryTree[].init;
       
@@ -873,6 +915,7 @@ class PlayerTarou : Player {
         GameInfo best = histories[idx].getInfo();
         auto bestActions = histories[idx].getActions();
         info.comboFlag &= best.remainCombo();
+        stderr.writeln("夜叉の構えモード: ", best.isYasyaNoKamae);
         /+
         if (best.samuraiInfo[best.weapon].hidden == 0 && best.isValid(9)) {
           best.doAction(9);
@@ -901,7 +944,9 @@ class PlayerTarou : Player {
           for (int x = 0; x < 15; ++x) {
             if (tugikuruDanger[y][x]) {
               stderr.write(" x");
-            } else {
+            } else if (tugikuruTokoro[y][x]) {
+              stderr.write(" #");
+            }else {
               stderr.write(" .");
             }
             if (y == best.samuraiInfo[best.weapon].curY
