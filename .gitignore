@@ -27,6 +27,7 @@ tarou.jirou.saburou/out
 *.tar.gz
 *.tar.bz2
 main*
+run.old.sh
 
 *~
 

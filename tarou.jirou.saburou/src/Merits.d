@@ -25,6 +25,10 @@ immutable class Merits {
     immutable double comb; // combo
     immutable double muda; // attacked but no occupying
     immutable double chop; // occupying probable enemy's point
+    immutable double lskl; // killing at last turn
+    immutable double zako; // occupying score ga syoboi
+    immutable double ysnk; // Yasya No Kamae
+    immutable double ksnr; // kasanari
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -46,7 +50,14 @@ immutable class Merits {
         double trgt = 0;
         double comb = 0;
         double muda = 0;
+<<<<<<< HEAD
         double chop = 0;
+=======
+        double lskl = 0;
+        double zako = 0;
+        double ysnk = 0;
+        double ksnr = 0;
+>>>>>>> master
 
       public:
       pure:
@@ -130,6 +141,21 @@ immutable class Merits {
         }
         MeritsBuilder setChop(double chop) {
           this.chop = chop;
+        }
+        MeritsBuilder setLskl(double lskl) {
+          this.lskl = lskl;
+          return this;
+        }
+        MeritsBuilder setZako(double zako) {
+          this.zako = zako;
+          return this;
+        }
+        MeritsBuilder setYsnk(double ysnk) {
+          this.ysnk = ysnk;
+          return this;
+        }
+        MeritsBuilder setKsnr(double ksnr) {
+          this.ksnr = ksnr;
           return this;
         }
     }
@@ -155,6 +181,10 @@ immutable class Merits {
       this.comb = mb.comb;
       this.muda = mb.muda;
       this.chop = mb.chop;
+      this.lskl = mb.lskl;
+      this.zako = mb.zako;
+      this.ysnk = mb.ysnk;
+      this.ksnr = mb.ksnr;
     }
 }
 

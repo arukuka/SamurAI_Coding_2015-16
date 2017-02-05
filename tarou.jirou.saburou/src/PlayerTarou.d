@@ -31,11 +31,13 @@ class PlayerTarou : Player {
         .setUsur(50)
         .setMidd(1)
         .setGrup(5)
-        .setTchd(1000)
         .setGiri(1)
         .setTrgt(1500)
-        .setComb(300)
+        .setYsnk(1000)
+        .setComb(75)
         .setMuda(-1)
+        .setZako(-100)
+        .setKsnr(-50)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -46,11 +48,11 @@ class PlayerTarou : Player {
         .setSafe(5000)
         .setUsur(50)
         .setMidd(1)
-        .setTchd(1000)
         .setTrgt(1500)
         .setGiri(1)
-        .setComb(300)
+        .setComb(75)
         .setMuda(-1)
+        .setKsnr(-50)
 //        .setLand(20)
 //        .setMvat(22)
         .build();
@@ -63,11 +65,11 @@ class PlayerTarou : Player {
         .setUsur(50)
         .setMidd(-1)
         .setGrup(5)
-        .setTchd(1000)
         .setTrgt(1500)
         .setGiri(1)
-        .setComb(300)
+        .setComb(75)
         .setMuda(-1)
+        .setKsnr(-50)
 //        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
@@ -104,6 +106,12 @@ class PlayerTarou : Player {
     static const Merits LAST_TURN_MERIT = new Merits.MeritsBuilder()
         .setTerr(20)
         .setUsur(40)
+        .setSelf(0)
+        .setLskl(10000)
+        .build();
+    static const Merits MERITS4ENEMY = new Merits.MeritsBuilder()
+        .setTerr(45)
+        .setUsur(50)
         .setSelf(0)
         .build();
 
@@ -419,6 +427,9 @@ class PlayerTarou : Player {
             debug {
               stderr.writeln("search ", i);
             }
+            if (diffPrevCount[i] == 0) {
+              continue;
+            }
             Point[] arr;
             for (int y = 0; y < info.height; ++y) {
               for (int x = 0; x < info.width; ++x) {
@@ -427,7 +438,6 @@ class PlayerTarou : Player {
                   if (samuraiDup[i].curX != -1 && samuraiDup[i].curY != -1) {
                     flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) <= 1;
                   }
-                  flag &= diffPrevCount[i] > 0;
                   bool done = false;
                   int diffCount = 0;
                   for (int d = 0; flag && d < ox[i - 3].length; ++d) {
@@ -634,12 +644,15 @@ class PlayerTarou : Player {
       search(info);
       
       int[][] naname2danger = new int[][](15, 15);
+      bool[3] beActive;
       bool[3] yabasou;
+      bool[3] yabe;
       for (int i = 0; i < 3; ++i) {
         bool yaba = false;
         foreach (v; prevActions[i]) {
           yaba |= 1 <= v && v <= 4;
         }
+        yabe[i] = yaba;
         enum ofs = [
           [ [-2, -2], [-2, 2], [2, -2], [2, 2] ],
           [ [-4, 0], [-3, -1], [-2, -2], [-1, -3], [0, -4], 
@@ -707,6 +720,9 @@ class PlayerTarou : Player {
       for (int i = 0; i < 3; ++i) {
         if (naname2danger[info.samuraiInfo[i].curY][info.samuraiInfo[i].curX]) {
           yabasou[i] = true;
+          if (!yabe[i] && info.samuraiInfo[i].hidden == 1) {
+            beActive[i] = true;
+          }
           /+
           enum ofs = [
                                           [0, -3],
@@ -730,6 +746,8 @@ class PlayerTarou : Player {
       }
       info.setNaname2Danger(naname2danger);
       info.setYabasou(yabasou);
+      info.setBeActive(beActive);
+      stderr.writeln("be active : ", beActive);
       bool[3] korosisou = true;
       for (int i = 0; i < 3; ++i) {
         foreach (v; prevActions[i]) {
@@ -749,6 +767,89 @@ class PlayerTarou : Player {
       if (info.turn % 6 < 2) {
         this.target = false;
       }
+      
+      // 相手から見えるフィールド情報
+      int[][] field4E = info.field.map!(a => a.dup).array;
+      for (int i = 0; i < info.height; ++i) {
+        for (int j = 0; j < info.width; ++j) {
+          if (field4E[i][j] < 6) {
+            field4E[i][j] = (field4E[i][j] + 3) % 6;
+          } else if (field4E[i][j] == 9) {
+            field4E[i][j] = 0;
+          }
+        }
+      }
+      GameInfo info4E = new GameInfo(info);
+      info4E.field = field4E;
+      for (int i = 0; i < 3; ++i) {
+        SamuraiInfo tmp = info4E.samuraiInfo[i];
+        info4E.samuraiInfo[i] = info4E.samuraiInfo[i + 3];
+        info4E.samuraiInfo[i + 3] = tmp;
+      }
+      bool[][] tugikuruDanger = new bool[][](info.height, info.width);
+      int[][] tugikuruTokoro = new int[][](info.height, info.width);
+      for (int i = 0; i < 3; ++i) {
+        with (info4E.samuraiInfo[i]) {
+          if (curX == -1 || curY == -1) {
+            continue;
+          }
+          GameInfo jnfo = new GameInfo(info4E);
+          jnfo.weapon = i;
+          HistoryTree root = new HistoryTree(null, jnfo, 0);
+          next_plan2(root);
+          
+          auto histories = root.collectEnd;
+          auto max_score = histories.map!(a => a.getInfo().score(MERITS4ENEMY)).reduce!max;
+          auto bests = histories.filter!(a => a.getInfo().score(MERITS4ENEMY) == max_score).array;
+          bool[Point] set;
+          foreach (best; bests) {
+            foreach (panel; best.getInfo.getOccupiedPointsArray) {
+              auto point = panel.key;
+              tugikuruDanger[point.y][point.x] = true;
+            }
+            with (best.getInfo.samuraiInfo[i]) {
+              set[Point(curX, curY)] = true;
+            }
+          }
+          if (set.length == 1) {
+            auto p = set.keys.front;
+            tugikuruTokoro[p.y][p.x] = i + 3;
+          }
+        }
+      }
+      info.setTugikuruDanger = tugikuruDanger;
+      
+      int[][][] yasyaNoKamae = new int[][][](3, info.height, info.width);
+      for (int i = 0; i < 3; ++i) {
+        for (int y = 0; y < info.height; ++y) {
+          for (int x = 0; x < info.width; ++x) {
+            with (info.samuraiInfo[i]) {
+              if (Math.abs(curX - x) + Math.abs(curY - y) > 3) {
+                continue;
+              }
+            }
+            if (info.field[y][x] >= 3) {
+              continue;
+            }
+            auto g = new GameInfo(info);
+            g.weapon = i;
+            g.samuraiInfo[i].curX = x;
+            g.samuraiInfo[i].curY = y;
+            auto r = new HistoryTree(null, g, 0);
+            next_plan2(r);
+            auto h = r.collectEnd;
+            foreach (n; h) {
+              foreach (panel; n.getInfo.getOccupiedPointsArray) {
+                auto point = panel.key;
+                if (tugikuruTokoro[point.y][point.x] >= 3) {
+                  yasyaNoKamae[i][y][x] = tugikuruTokoro[point.y][point.x];
+                }
+              }
+            }
+          }
+        }
+      }
+      info.setYasyaNoKamae = yasyaNoKamae;
       
       HistoryTree[] histories = HistoryTree[].init;
       
@@ -820,12 +921,26 @@ class PlayerTarou : Player {
             nodes[i] = node(i, v);
           }
         } else {
-          foreach (i, next; histories) {
+          import std.parallelism;
+          foreach (i, next; histories.parallel) {
             HistoryTree next_root = new HistoryTree(null, next.info, 0);
             next_plan2(next_root);
             auto next_histories = next_root.collectEnd();
             
             double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
+            
+            HistoryTree[3] nuri;
+            for (int j = 0; j < 3; ++j) {
+              GameInfo jnfo = new GameInfo(next.info);
+              jnfo.weapon = j;
+              HistoryTree r = new HistoryTree(null, jnfo, 0);
+              next_plan2(r);
+              auto h = r.collectEnd();
+              auto s = 0.0.reduce!max(h.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[j])));
+              auto b = h.filter!(a  => a.getInfo().score(NEXT_MERITS4WEAPON[j]) == s).front;
+              nuri[j] = b;
+            }
+            next.getInfo().miruKasanari(nuri);
             
             next.getInfo().findTarget();
 
@@ -840,7 +955,8 @@ class PlayerTarou : Player {
         auto idx = bests[uniform(0, bests.length)].index;
         GameInfo best = histories[idx].getInfo();
         auto bestActions = histories[idx].getActions();
-        info.comboFlag &= best.remainCombo();
+        info.comboFlag[best.weapon] &= best.remainCombo();
+        stderr.writeln("夜叉の構えモード: ", best.isYasyaNoKamae);
         /+
         if (best.samuraiInfo[best.weapon].hidden == 0 && best.isValid(9)) {
           best.doAction(9);
@@ -864,6 +980,24 @@ class PlayerTarou : Player {
             }
             stderr.writeln;
           }
+        }
+        for (int y = 0; y < 15; ++y) {
+          for (int x = 0; x < 15; ++x) {
+            if (tugikuruDanger[y][x]) {
+              stderr.write(" x");
+            } else if (tugikuruTokoro[y][x]) {
+              stderr.write(" #");
+            }else {
+              stderr.write(" .");
+            }
+            if (y == best.samuraiInfo[best.weapon].curY
+                && x == best.samuraiInfo[best.weapon].curX) {
+              stderr.write("*");
+            } else {
+              stderr.write(" ");
+            }
+          }
+          stderr.writeln;
         }
         stderr.writefln("score = %f", max_score);
         stderr.writeln(bestActions);

@@ -91,6 +91,11 @@ class GameInfo {
       
       this.comboFlag = info.comboFlag;
       this.comboActions = info.comboActions;
+      
+      this.tugikuruDanger = info.tugikuruDanger;
+      this.yasyaNoKamae = info.yasyaNoKamae;
+      
+      this.beActive = info.beActive;
     }
     
     this() {
@@ -204,7 +209,7 @@ class GameInfo {
             if ( i == this.weapon ) {
               continue;
             }
-            if ( x == s.curX && y == s.curY ) {
+            if ( x == s.curX && y == s.curY && me.hidden == 0 && s.hidden == 0 ) {
               return false;
             }
             if ( x == s.homeX && y == s.homeY ) {
@@ -402,6 +407,10 @@ class GameInfo {
           + this.remainCombo() * m.comb
           + this.hasMuda() * m.muda
           + this.chopCount * m.chop
+          + this.temeehadameda() * m.lskl
+          + this.isZako() * m.zako
+          + this.kasanari * m.ksnr
+          + this.isYasyaNoKamae() * m.ysnk
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -564,23 +573,54 @@ class GameInfo {
     }
 
     double safeLevel() const pure nothrow @safe {
-      if (yabasou[this.weapon]) {
-        if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
-          return 0.0;
+      if (!beActive[this.weapon]) {
+        if (yabasou[this.weapon]) {
+          if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
+            return 0.0;
+          }
+        } else {
+          if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
+            return 0.0;
+          }
         }
-      } else {
-        if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
+      }
+      bool daijoubu = false;
+      if (this.side == 0) {
+        bool hajimete = true;
+        for (int i = 0; i < 3; ++i) {
+          hajimete &= !this.reservedTarget[i];
+        }
+        daijoubu = hajimete;
+      }
+      with (this.samuraiInfo[this.weapon]) {
+        if (tugikuruDanger[curY][curX] && !daijoubu) {
           return 0.0;
         }
       }
+      
       double safe = 1.0;
       for (int i = 3; i < 6; ++i) {
-        if (this.target[i - 3]) {
-          continue;
-        }
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
+        if (this.target[i - 3]) {
+          safe = min(safe, isSafe(i, p) ? 1.0 : 0.96);
+          continue;
+        }
+        with (this.samuraiInfo[this.weapon]) {
+          int v = yasyaNoKamae[this.weapon][curY][curX];
+          if ( v == i ) {
+            safe = min(safe, isSafe(i, p) ? 1.0 : 0.96);
+            continue;
+          }
+        }
         if (p.x != -1 && p.y != -1) {
+          if (this.side == 1 && !si.done) {
+            SamuraiInfo me = this.samuraiInfo[this.weapon];
+            immutable Point mep = Point(me.curX, me.curY);
+            safe = min(safe, isSafeW2T(mep, p, i)
+                || (!isAttackContain && me.hidden && isSafeW2A(mep, p, i))
+                ? 1.0 : 0.0);
+          }
           safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
         }
         foreach(pp; this.probPlaces[i]) {
@@ -813,6 +853,12 @@ class GameInfo {
         if (si.curX == -1 || si.curY == -1) {
           continue;
         }
+        if (si.curX == si.homeX && si.curY == si.homeY) {
+          continue;
+        }
+        if (reservedTarget[i - 3]) {
+          continue;
+        }
         // is in kill zone
         SamuraiInfo me = this.samuraiInfo[this.weapon];
         Point sip = Point(si.curX, si.curY);
@@ -895,22 +941,31 @@ class GameInfo {
       occupyCount = 0;
       groupLevel = 0;
     }
-    void setComboActions(int[][] comboActions) pure @safe nothrow {
-      this.comboActions = comboActions;
+    void setComboActions(int[][] acts) pure @safe nothrow {
+      this.comboActions = (this.comboActions).init;
+      for (int p = 0; p < turns / 6; ++p) {
+        if (p * 3 + 2 >= acts.length) {
+          break;
+        }
+        Nmoo hai = Nmoo.init;
+        enum s = 1;
+        for (int i = 0; i < 3; ++i) {
+          int w = (s + i) % 3;
+          int idx = p * 3 + i;
+          hai[w] = acts[idx];
+        }
+        this.comboActions ~= hai;
+      }
     }
     bool remainCombo() const pure @safe nothrow {
-      if (!comboFlag) {
+      if (!comboFlag[this.weapon]) {
         return false;
       }
-      int idx = this.turn / 2;
-      if (idx >= comboActions.length) {
+      int period = this.turn / 6;
+      if (period >= comboActions.length) {
         return false;
       }
-      int w = (idx + 1) % 3;
-      if (w != this.weapon) {
-        return false;
-      }
-      return actions == comboActions[idx];
+      return actions == comboActions[period][this.weapon];
     }
     void initTarget() pure @safe nothrow {
       this.target = false;
@@ -925,7 +980,7 @@ class GameInfo {
       return playerKill == 0 && selfCount == 0 && usurpCount == 0 && occupyCount == 0;
     }
     int[] actions;
-    bool comboFlag;
+    bool[3] comboFlag;
     int chopCount() const pure @safe nothrow {
       int cnt = 0;
       for (int i = 3; i < 6; ++i) {
@@ -936,6 +991,68 @@ class GameInfo {
         }
       }
       return cnt;
+    }
+    auto getOccupiedPointsArray() const pure @safe {
+      return occupiedPointsArray.idup;
+    }
+    void setTugikuruDanger(bool[][] d) pure @safe nothrow {
+      this.tugikuruDanger = d;
+    }
+    void setBeActive(bool[3] beActive) pure @safe nothrow {
+      this.beActive = beActive;
+    }
+    int temeehadameda() const pure @safe nothrow {
+      int cnt = 0;
+      for (int i = 3; i < 6; ++i) {
+        if (!samuraiInfo[i].done && isKilled[i - 3]) {
+          ++cnt;
+        }
+      }
+      return cnt;
+    }
+    bool isZako() const pure @safe nothrow {
+      if (occupyCount + usurpCount == 0) {
+        int moveCount = 0;
+        foreach (v; actions) {
+          if (4 <= v && v <= 8) {
+            ++moveCount;
+          }
+        }
+        if (moveCount == 3) {
+          return false;
+        }
+      }
+      return occupyCount + usurpCount <= 2;
+    }
+    void miruKasanari(PlayerTarou.HistoryTree[3] nuri) {
+      bool[Point] set;
+      int cnt = occupyCount + selfCount + usurpCount;
+      foreach (h; nuri) {
+        auto g = h.getInfo;
+        foreach (p; g.occupiedPointsArray) {
+          set[p.key] = true;
+        }
+        cnt += g.occupyCount + g.selfCount + g.usurpCount;
+      }
+      kasanari = cnt - cast(int)set.length;
+    }
+    void setYasyaNoKamae(int[][][] k) pure @safe nothrow {
+      this.yasyaNoKamae = k;
+    }
+    bool isYasyaNoKamae() const pure @safe nothrow {
+      with (this.samuraiInfo[this.weapon]) {
+        if (isAttackContain || hidden == 0) {
+          return false;
+        }
+        int v = yasyaNoKamae[this.weapon][curY][curX];;
+        if (v == 0) {
+          return false;
+        }
+        if (this.samuraiInfo[v].curePeriod > 0) {
+          return false;
+        }
+        return true;
+      }
     }
  private:
     int occupyCount;
@@ -957,7 +1074,12 @@ class GameInfo {
     bool[3] korosisou;
     bool[3] target;
     bool[3] reservedTarget;
-    int[][] comboActions;
+    alias int[][3] Nmoo;
+    Nmoo[] comboActions;
+    bool[][] tugikuruDanger;
+    int[][][] yasyaNoKamae;
+    bool[3] beActive;
+    int kasanari;
 
     string[] read() {
       string line = "";

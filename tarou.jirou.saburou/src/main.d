@@ -1,13 +1,34 @@
 import samurai;
 
 import std.stdio;
+import std.getopt;
 
 void main(string[] args)
 {
+  string[2] combo;
+  void myHandler(string option, string value) {
+    if (option == "seed") {
+      import std.conv;
+      import std.random;
+      uint s = value.to!int;
+      rndGen.seed = s;
+    }
+  }
+  getopt(
+    args,
+    "seed", &myHandler,
+    "combo-0", &combo[0],
+    "combo-1", &combo[1]
+  );
   GameInfo info = new GameInfo();
   PlayerTarou p = new PlayerTarou(info);
-  
-  beamStackSearch(info);
+
+  import std.file;
+  if (combo[info.side].exists && combo[info.side].isFile) {
+    info.readCombo = combo[info.side];
+  } else {
+    info.beamStackSearch;
+  }
   
   0.writeln;
   stdout.flush;
@@ -211,4 +232,23 @@ void beamStackSearch(GameInfo atom)
   }
   atom.setComboActions(actions);
 }
+
+import std.string;
+import std.conv;
+import std.array;
+
+void readCombo(GameInfo info, string fn)
+{
+  auto f = File(fn, "r");
+  int[][] actions;
+  for (;;) {
+    string l = f.readln;
+    if (l.length == 0) {
+      break;
+    }
+    actions ~= l.chomp.split.map!(to!int).array;
+  }
+  info.setComboActions(actions);
+}
+
 
