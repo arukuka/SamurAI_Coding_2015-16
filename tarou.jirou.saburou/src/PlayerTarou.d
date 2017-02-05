@@ -417,6 +417,9 @@ class PlayerTarou : Player {
             debug {
               stderr.writeln("search ", i);
             }
+            if (diffPrevCount[i] == 0) {
+              continue;
+            }
             Point[] arr;
             for (int y = 0; y < info.height; ++y) {
               for (int x = 0; x < info.width; ++x) {
@@ -425,7 +428,6 @@ class PlayerTarou : Player {
                   if (samuraiDup[i].curX != -1 && samuraiDup[i].curY != -1) {
                     flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) <= 1;
                   }
-                  flag &= diffPrevCount[i] > 0;
                   bool done = false;
                   int diffCount = 0;
                   for (int d = 0; flag && d < ox[i - 3].length; ++d) {
@@ -774,7 +776,7 @@ class PlayerTarou : Player {
           HistoryTree root = new HistoryTree(null, jnfo, 0);
           next_plan2(root);
           
-          auto histories = root.collect();
+          auto histories = root.collectEnd;
           auto max_score = histories.map!(a => a.getInfo().score(MERITS4ENEMY)).reduce!max;
           auto bests = histories.filter!(a => a.getInfo().score(MERITS4ENEMY) == max_score).array;
           bool[Point] set;
@@ -813,7 +815,7 @@ class PlayerTarou : Player {
             g.samuraiInfo[i].curY = y;
             auto r = new HistoryTree(null, g, 0);
             next_plan2(r);
-            auto h = r.collect;
+            auto h = r.collectEnd;
             foreach (n; h) {
               foreach (panel; n.getInfo.getOccupiedPointsArray) {
                 auto point = panel.key;
@@ -897,7 +899,8 @@ class PlayerTarou : Player {
             nodes[i] = node(i, v);
           }
         } else {
-          foreach (i, next; histories) {
+          import std.parallelism;
+          foreach (i, next; histories.parallel) {
             HistoryTree next_root = new HistoryTree(null, next.info, 0);
             next_plan2(next_root);
             auto next_histories = next_root.collectEnd();
