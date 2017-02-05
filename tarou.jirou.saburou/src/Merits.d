@@ -50,14 +50,11 @@ immutable class Merits {
         double trgt = 0;
         double comb = 0;
         double muda = 0;
-<<<<<<< HEAD
         double chop = 0;
-=======
         double lskl = 0;
         double zako = 0;
         double ysnk = 0;
         double ksnr = 0;
->>>>>>> master
 
       public:
       pure:
@@ -141,6 +138,7 @@ immutable class Merits {
         }
         MeritsBuilder setChop(double chop) {
           this.chop = chop;
+          return this;
         }
         MeritsBuilder setLskl(double lskl) {
           this.lskl = lskl;

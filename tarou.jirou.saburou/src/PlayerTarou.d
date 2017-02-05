@@ -38,6 +38,7 @@ class PlayerTarou : Player {
         .setMuda(-1)
         .setZako(-100)
         .setKsnr(-50)
+        .setChop(50)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -53,6 +54,7 @@ class PlayerTarou : Player {
         .setComb(75)
         .setMuda(-1)
         .setKsnr(-50)
+        .setChop(50)
 //        .setLand(20)
 //        .setMvat(22)
         .build();
@@ -70,6 +72,7 @@ class PlayerTarou : Player {
         .setComb(75)
         .setMuda(-1)
         .setKsnr(-50)
+        .setChop(50)
 //        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
@@ -435,9 +438,6 @@ class PlayerTarou : Player {
               for (int x = 0; x < info.width; ++x) {
                 for (int r = 0; r < 4; ++r) {
                   bool flag = true;
-                  if (samuraiDup[i].curX != -1 && samuraiDup[i].curY != -1) {
-                    flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) <= 1;
-                  }
                   bool done = false;
                   int diffCount = 0;
                   for (int d = 0; flag && d < ox[i - 3].length; ++d) {
@@ -486,6 +486,30 @@ class PlayerTarou : Player {
                     }
                   }
                   flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
+                  if (samuraiDup[i].curX != -1 && samuraiDup[i].curY != -1) {
+                    if (flag && Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) == 0) {
+                      enum mimawari = [
+                        [0, 0],
+                        [0, 1],
+                        [0, -1],
+                        [1, 0],
+                        [-1, 0]
+                      ];
+                      foreach (d; mimawari) {
+                        int px = x + d[0];
+                        int py = y + d[1];
+                        if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                          continue;
+                        }
+                        if (3 <= info.field[py][px] && info.field[py][px] < 6) {
+                          arr ~= Point(px, py);
+                        }
+                      }
+                      continue;
+                    } else {
+                      flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) == 1;
+                    }
+                  }
                   if (flag) {
                     arr ~= Point(x, y);
                   }
