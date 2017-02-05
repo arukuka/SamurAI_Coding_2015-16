@@ -1,20 +1,34 @@
 import samurai;
 
 import std.stdio;
+import std.getopt;
 
 void main(string[] args)
 {
-  assert (args.length >= 3);
-  if (args.length == 4) {
-    import std.conv;
-    import std.random;
-    int s = args[3].to!int;
-    rndGen.seed = s;
+  string[2] combo;
+  void myHandler(string option, string value) {
+    if (option == "seed") {
+      import std.conv;
+      import std.random;
+      uint s = value.to!int;
+      rndGen.seed = s;
+    }
   }
+  getopt(
+    args,
+    "seed", &myHandler,
+    "combo-0", &combo[0],
+    "combo-1", &combo[1]
+  );
   GameInfo info = new GameInfo();
   PlayerTarou p = new PlayerTarou(info);
 
-  readCombo(info, args[1 + info.side]);
+  import std.file;
+  if (combo[info.side].exists && combo[info.side].isFile) {
+    info.readCombo = combo[info.side];
+  } else {
+    info.beamStackSearch;
+  }
   
   0.writeln;
   stdout.flush;
