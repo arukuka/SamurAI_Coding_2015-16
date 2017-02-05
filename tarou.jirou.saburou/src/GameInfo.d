@@ -408,7 +408,7 @@ class GameInfo {
           + this.hasMuda() * m.muda
           + this.temeehadameda() * m.lskl
           + this.isZako() * m.zako
-          + this.kasanari * (-50)
+          + this.kasanari * m.ksnr
           + this.isYasyaNoKamae() * m.ysnk
           + this.moveAfterAttack * m.mvat;
     }

@@ -27,6 +27,7 @@ immutable class Merits {
     immutable double lskl; // killing at last turn
     immutable double zako; // occupying score ga syoboi
     immutable double ysnk; // Yasya No Kamae
+    immutable double ksnr; // kasanari
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -51,6 +52,7 @@ immutable class Merits {
         double lskl = 0;
         double zako = 0;
         double ysnk = 0;
+        double ksnr = 0;
 
       public:
       pure:
@@ -144,6 +146,10 @@ immutable class Merits {
           this.ysnk = ysnk;
           return this;
         }
+        MeritsBuilder setKsnr(double ksnr) {
+          this.ksnr = ksnr;
+          return this;
+        }
     }
 
   private:
@@ -169,6 +175,7 @@ immutable class Merits {
       this.lskl = mb.lskl;
       this.zako = mb.zako;
       this.ysnk = mb.ysnk;
+      this.ksnr = mb.ksnr;
     }
 }
 
