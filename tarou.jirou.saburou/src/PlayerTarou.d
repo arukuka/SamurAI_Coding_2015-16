@@ -945,8 +945,7 @@ class PlayerTarou : Player {
             nodes[i] = node(i, v);
           }
         } else {
-          import std.parallelism;
-          foreach (i, next; histories.parallel) {
+          foreach (i, next; histories) {
             HistoryTree next_root = new HistoryTree(null, next.info, 0);
             next_plan2(next_root);
             auto next_histories = next_root.collectEnd();
