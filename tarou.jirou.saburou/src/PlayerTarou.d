@@ -460,7 +460,7 @@ class PlayerTarou : Player {
                     bool arieru = true;
                     if (fieldDup[y][x] != 9) {
                       with (samuraiDup[i]) {
-                        if (curX == -1 || curY == -1) {
+                        if (curX != x || curY != y) {
                           arieru = false;
                         }
                       }
