@@ -613,21 +613,22 @@ class GameInfo {
             continue;
           }
         }
+        SamuraiInfo me = this.samuraiInfo[this.weapon];
         if (p.x != -1 && p.y != -1) {
           if (this.side == 1 && !si.done) {
-            SamuraiInfo me = this.samuraiInfo[this.weapon];
             immutable Point mep = Point(me.curX, me.curY);
             safe = min(safe, isSafeW2T(mep, p, i)
                 || (!isAttackContain && me.hidden && isSafeW2A(mep, p, i))
+                || (moveAfterAttack && me.hidden)
                 ? 1.0 : 0.0);
           }
-          safe = min(safe, isSafe(i, p) ? 1.0 : 0.0);
+          safe = min(safe, isSafe(i, p) || (moveAfterAttack && me.hidden) ? 1.0 : 0.0);
         }
         foreach(pp; this.probPlaces[i]) {
           if (get(pp.x, pp.y) < 3) {
             continue;
           }
-          safe = min(safe, isSafe(i, pp) ? 1.0 : 0.0);
+          safe = min(safe, isSafe(i, pp)  || (moveAfterAttack && me.hidden)  ? 1.0 : 0.0);
         }
       }
       return safe;
