@@ -1007,7 +1007,11 @@ class PlayerTarou : Player {
         }
         for (int y = 0; y < 15; ++y) {
           for (int x = 0; x < 15; ++x) {
-            if (tugikuruDanger[y][x]) {
+            bool flag = false;
+            for (int i = 0; i < 3; ++i) {
+              flag |= tugikuruDanger[i][y][x];
+            }
+            if (flag) {
               stderr.write(" x");
             } else if (tugikuruTokoro[y][x]) {
               stderr.write(" #");
