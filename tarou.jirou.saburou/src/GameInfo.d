@@ -593,8 +593,13 @@ class GameInfo {
         daijoubu = hajimete;
       }
       with (this.samuraiInfo[this.weapon]) {
-        if (tugikuruDanger[curY][curX] && !daijoubu) {
-          return 0.0;
+        for (int i = 0; i < 3; ++i) {
+          if (isKilled[i]) {
+            continue;
+          }
+          if (tugikuruDanger[i][curY][curX] && !daijoubu) {
+            return 0.0;
+          }
         }
       }
       
@@ -996,7 +1001,7 @@ class GameInfo {
     auto getOccupiedPointsArray() const pure @safe {
       return occupiedPointsArray.idup;
     }
-    void setTugikuruDanger(bool[][] d) pure @safe nothrow {
+    void setTugikuruDanger(bool[][][] d) pure @safe nothrow {
       this.tugikuruDanger = d;
     }
     void setBeActive(bool[3] beActive) pure @safe nothrow {
@@ -1077,7 +1082,7 @@ class GameInfo {
     bool[3] reservedTarget;
     alias int[][3] Nmoo;
     Nmoo[] comboActions;
-    bool[][] tugikuruDanger;
+    bool[][][] tugikuruDanger;
     int[][][] yasyaNoKamae;
     bool[3] beActive;
     int kasanari;

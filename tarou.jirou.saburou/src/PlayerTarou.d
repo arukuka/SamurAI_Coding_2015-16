@@ -810,7 +810,7 @@ class PlayerTarou : Player {
         info4E.samuraiInfo[i] = info4E.samuraiInfo[i + 3];
         info4E.samuraiInfo[i + 3] = tmp;
       }
-      bool[][] tugikuruDanger = new bool[][](info.height, info.width);
+      bool[][][] tugikuruDanger = new bool[][][](3, info.height, info.width);
       int[][] tugikuruTokoro = new int[][](info.height, info.width);
       for (int i = 0; i < 3; ++i) {
         with (info4E.samuraiInfo[i]) {
@@ -829,7 +829,7 @@ class PlayerTarou : Player {
           foreach (best; bests) {
             foreach (panel; best.getInfo.getOccupiedPointsArray) {
               auto point = panel.key;
-              tugikuruDanger[point.y][point.x] = true;
+              tugikuruDanger[i][point.y][point.x] = true;
             }
             with (best.getInfo.samuraiInfo[i]) {
               set[Point(curX, curY)] = true;
