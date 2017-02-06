@@ -431,6 +431,24 @@ class PlayerTarou : Player {
               stderr.writeln("search ", i);
             }
             if (diffPrevCount[i] == 0) {
+              if ( (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+                  || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+                  || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
+                probPointDup[i] = probPointDup[i].init;
+              }
+              if (probPointDup[i].length == 1) {
+                Point p = probPointDup[i].front;
+                int x = p.x;
+                int y = p.y;
+                debug {
+                  stderr.writeln("\t\tfinally got it! : ", p);
+                }
+                si.curX = x;
+                si.curY = y;
+                info.samuraiInfo[i] = si;
+                probPointDup[i] = probPointDup[i].init;
+              }
+              info.setProbPlaces(i, probPointDup[i]);
               continue;
             }
             Point[] arr;
