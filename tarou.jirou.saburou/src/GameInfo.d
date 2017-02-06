@@ -633,6 +633,13 @@ class GameInfo {
           if (get(pp.x, pp.y) < 3) {
             continue;
           }
+          if (this.side == 1 && !si.done) {
+            immutable Point mep = Point(me.curX, me.curY);
+            safe = min(safe, isSafeW2T(mep, pp, i)
+                || (!isAttackContain && me.hidden && isSafeW2A(mep, pp, i))
+                || (moveAfterAttack && me.hidden)
+                ? 1.0 : 0.0);
+          }
           safe = min(safe, isSafe(i, pp)  || (moveAfterAttack && me.hidden)  ? 1.0 : 0.0);
         }
       }
