@@ -96,6 +96,9 @@ class GameInfo {
       this.yasyaNoKamae = info.yasyaNoKamae;
       
       this.beActive = info.beActive;
+      
+      this.sokokamo = info.sokokamo;
+      this.yattakaCount = info.yattakaCount;
     }
     
     this() {
@@ -132,6 +135,7 @@ class GameInfo {
       this.usurpCount = 0;
       this.fightCount = 0;
       this.groupLevel = 0;
+      this.yattakaCount = 0;
 
       this.paints = 0;
 
@@ -263,6 +267,7 @@ class GameInfo {
       usurpCount = 0;
       fightCount = 0;
       isKilled = false;
+      yattakaCount = 0;
       int groupCount = 0;
 
       isAttackContain |= true;
@@ -345,6 +350,12 @@ class GameInfo {
                 ++playerKill;
                 isKilled[j - 3] |= true;
               }
+              if (j in sokokamo) {
+                auto p = sokokamo[j];
+                if (p.x == nx && p.y == ny) {
+                  ++yattakaCount;
+                }
+              }
             }
           }
         }
@@ -411,6 +422,7 @@ class GameInfo {
           + this.isZako() * m.zako
           + this.kasanari * m.ksnr
           + this.isYasyaNoKamae() * m.ysnk
+          + this.yattakaCount * m.yttk
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -863,8 +875,13 @@ class GameInfo {
         if (!si.done) {
           continue;
         }
-        if (si.curX == -1 || si.curY == -1) {
-          continue;
+        Point sip = Point(si.curX, si.curY);
+        if (sip.x == -1 || sip.y == -1) {
+          if (i in sokokamo) {
+            sip = sokokamo[i];
+          } else {
+            continue;
+          }
         }
         if (si.curX == si.homeX && si.curY == si.homeY) {
           continue;
@@ -874,7 +891,6 @@ class GameInfo {
         }
         // is in kill zone
         SamuraiInfo me = this.samuraiInfo[this.weapon];
-        Point sip = Point(si.curX, si.curY);
         Point mep = Point(me.curX, me.curY);
         this.target[i - 3] = !GameInfo.isSafe(mep, sip, this.weapon + 3);
       }
@@ -1067,12 +1083,16 @@ class GameInfo {
         return true;
       }
     }
+    void setSokokamo(Point[int] s) pure @safe nothrow {
+      sokokamo = s;
+    }
  private:
     int occupyCount;
     int playerKill;
     int selfCount;
     int usurpCount;
     int fightCount;
+    int yattakaCount;
     double groupLevel;
     int[6] paints;
     Point[][6] probPlaces;
@@ -1093,6 +1113,7 @@ class GameInfo {
     int[][][] yasyaNoKamae;
     bool[3] beActive;
     int kasanari;
+    Point[int] sokokamo;
 
     string[] read() {
       string line = "";
