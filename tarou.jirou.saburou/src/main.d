@@ -2,6 +2,7 @@ import samurai;
 
 import std.stdio;
 import std.getopt;
+import core.memory;
 
 void main(string[] args)
 {
@@ -30,12 +31,17 @@ void main(string[] args)
     info.beamStackSearch;
   }
   
+  GC.disable();
+  
   0.writeln;
   stdout.flush;
 
   while (1) {
     info.readTurnInfo();
     stderr.writefln("# Turn %d", info.turn);
+    if (info.turn % 6 >= 4) {
+      GC.collect();
+    }
     bool able = false;
     for (int i = 0; i < 3; ++i) {
       with(info.samuraiInfo[i]) {
