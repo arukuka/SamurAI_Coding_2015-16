@@ -21,6 +21,7 @@ class PlayerTarou : Player {
     SamuraiInfo[] samuraiDup = null;
     Point[][6] probPointDup;
     int[][3] prevActions = [[0], [0], [0]];
+    int skipCount;
 
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(40)
@@ -682,6 +683,10 @@ class PlayerTarou : Player {
         }
       }
       info.setRivalInfo(paintCount);
+      
+      if (info.turn % 6 < 2) {
+        skipCount = 0;
+      }
 
       search(info);
       
@@ -998,6 +1003,19 @@ class PlayerTarou : Player {
         auto bestActions = histories[idx].getActions();
         info.comboFlag[best.weapon] &= best.remainCombo();
         stderr.writeln("夜叉の構えモード: ", best.isYasyaNoKamae);
+        
+        int maxSkip = 0;
+        int skipID = 0;
+        for (int i = 0; i < 3; ++i) {
+          if (info.samuraiInfo[i].curePeriod) {
+            ++maxSkip;
+            skipID = i;
+          }
+        }
+        GameInfo jnfo = new GameInfo(info);
+        jnfo.weapon = best.weapon;
+        bool skipFlag = skipCount < maxSkip && best.getPlayerKill == 0 && best.safeLevel == jnfo.safeLevel;
+        
         /+
         if (best.samuraiInfo[best.weapon].hidden == 0 && best.isValid(9)) {
           best.doAction(9);
@@ -1047,24 +1065,35 @@ class PlayerTarou : Player {
         stderr.writefln("score = %f", max_score);
         stderr.writeln(bestActions);
         stderr.writeln("combo : ", info.comboFlag);
-        best.weapon.writeln;
-        "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
         
-        best.paintUsingHistory();
-        fieldDup = best.field.map!(a => a.dup).array;
-        samuraiDup = best.samuraiInfo.dup;
-        prevActions[best.weapon] = bestActions.dup;
+        if (skipFlag) {
+          ++skipCount;
+          stderr.writeln("SKIP!!!");
+          skipID.writeln;
+          
+          fieldDup = info.field.map!(a => a.dup).array;
+          samuraiDup = info.samuraiInfo.dup;
+          prevActions[skipID] = [];
+        } else {
+          best.weapon.writeln;
+          "".reduce!((l, r) => l ~ " " ~ r)(bestActions.map!(a => a.to!string)).writeln;
+          
+          best.paintUsingHistory();
+          fieldDup = best.field.map!(a => a.dup).array;
+          samuraiDup = best.samuraiInfo.dup;
+          prevActions[best.weapon] = bestActions.dup;
         
-        this.target[] |= best.getTarget()[];
-      
-        for (int i = 3; i < 6; ++i) {
-          if ((best.samuraiInfo[i].curX != -1 && best.samuraiInfo[i].curY != -1)
-          && best.samuraiInfo[i].curX != samuraiMemory[i].curX
-          && best.samuraiInfo[i].curY != samuraiMemory[i].curY ) {
-            samuraiMemory[i].curX = best.samuraiInfo[i].curX;
-            samuraiMemory[i].curY = best.samuraiInfo[i].curY;
-            debug {
-              stderr.writeln("\tmay killed so : ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+          this.target[] |= best.getTarget()[];
+          
+          for (int i = 3; i < 6; ++i) {
+            if ((best.samuraiInfo[i].curX != -1 && best.samuraiInfo[i].curY != -1)
+            && best.samuraiInfo[i].curX != samuraiMemory[i].curX
+            && best.samuraiInfo[i].curY != samuraiMemory[i].curY ) {
+              samuraiMemory[i].curX = best.samuraiInfo[i].curX;
+              samuraiMemory[i].curY = best.samuraiInfo[i].curY;
+              debug {
+                stderr.writeln("\tmay killed so : ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+              }
             }
           }
         }

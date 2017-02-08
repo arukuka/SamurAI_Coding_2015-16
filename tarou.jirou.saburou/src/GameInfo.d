@@ -1078,6 +1078,9 @@ class GameInfo {
         return true;
       }
     }
+    int getPlayerKill() const pure @safe nothrow {
+      return playerKill;
+    }
  private:
     int occupyCount;
     int playerKill;
