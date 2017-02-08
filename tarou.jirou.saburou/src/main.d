@@ -39,21 +39,21 @@ void main(string[] args)
     bool able = false;
     for (int i = 0; i < 3; ++i) {
       with(info.samuraiInfo[i]) {
-        // debug{
+        debug{
           stderr.writefln("#%d : %d, %d, %d, %d, %d", i, curX, curY, done, hidden, curePeriod);
-        // }
+        }
         if (!done && curePeriod == 0) {
           able |= true;
         }
       }
     }
-    // debug {
+    debug {
       for (int i = 3; i < 6; ++i) {
         with(info.samuraiInfo[i]) {
           stderr.writefln("#%d : %d, %d, %d, %d, %d", i, curX, curY, done, hidden, curePeriod);
         }
       }
-    // }
+    }
     if (able) {
       p.play(info);
       0.writeln;
