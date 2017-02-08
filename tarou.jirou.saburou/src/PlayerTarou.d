@@ -1008,6 +1008,14 @@ class PlayerTarou : Player {
         int skipID = 0;
         for (int i = 0; i < 3; ++i) {
           if (info.samuraiInfo[i].curePeriod) {
+            int nowPeriod = info.turn / 6;
+            bool yametoke = false;
+            for (int add = 2; nowPeriod == (info.turn + add) / 6; add += 2) {
+              yametoke |= add >= info.samuraiInfo[i].curePeriod;
+            }
+            if (yametoke) {
+              continue;
+            }
             ++maxSkip;
             skipID = i;
           }
