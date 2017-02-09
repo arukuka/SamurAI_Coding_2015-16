@@ -585,17 +585,28 @@ class GameInfo {
     }
 
     double safeLevel() const pure nothrow @safe {
+      SamuraiInfo me = this.samuraiInfo[this.weapon];
       if (!beActive[this.weapon]) {
         if (yabasou[this.weapon]) {
-          if (isAttackContain || this.samuraiInfo[this.weapon].hidden == 0) {
+          if (isAttackContain || me.hidden == 0) {
             return 0.0;
           }
         } else {
-          if (naname2danger[this.samuraiInfo[this.weapon].curY][this.samuraiInfo[this.weapon].curX]) {
+          if (naname2danger[me.curY][me.curX]) {
             return 0.0;
           }
         }
       }
+      // sine
+      double[bool] init(double kagen) {
+        double[bool] ret;
+        ret[false] = kagen;
+        ret[true] = 1.0;
+        return ret;
+      }
+      enum double[bool] ret  = init = 0.0;
+      enum double[bool] ret2 = init = 0.96;
+      
       bool daijoubu = false;
       if (this.side == 0) {
         bool hajimete = true;
@@ -620,26 +631,24 @@ class GameInfo {
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
         if (this.target[i - 3]) {
-          safe = min(safe, isSafe(i, p) ? 1.0 : 0.96);
+          safe = min(safe, ret2[isSafe(i, p)]);
           continue;
         }
         with (this.samuraiInfo[this.weapon]) {
           int v = yasyaNoKamae[this.weapon][curY][curX];
           if ( v == i ) {
-            safe = min(safe, isSafe(i, p) ? 1.0 : 0.96);
+            safe = min(safe, ret2[isSafe(i, p)]);
             continue;
           }
         }
-        SamuraiInfo me = this.samuraiInfo[this.weapon];
         if (p.x != -1 && p.y != -1) {
           if (this.side == 1 && !si.done) {
             immutable Point mep = Point(me.curX, me.curY);
-            safe = min(safe, isSafeW2T(mep, p, i)
+            safe = min(safe, ret[isSafeW2T(mep, p, i)
                 || (!isAttackContain && me.hidden && isSafeW2A(mep, p, i))
-                || (moveAfterAttack && me.hidden)
-                ? 1.0 : 0.0);
+                ]);
           }
-          safe = min(safe, isSafe(i, p) || (moveAfterAttack && me.hidden) ? 1.0 : 0.0);
+          safe = min(safe, ret[isSafe(i, p)]);
         }
         foreach(pp; this.probPlaces[i]) {
           if (get(pp.x, pp.y) < 3) {
@@ -647,13 +656,15 @@ class GameInfo {
           }
           if (this.side == 1 && !si.done) {
             immutable Point mep = Point(me.curX, me.curY);
-            safe = min(safe, isSafeW2T(mep, pp, i)
+            safe = min(safe, ret[isSafeW2T(mep, pp, i)
                 || (!isAttackContain && me.hidden && isSafeW2A(mep, pp, i))
-                || (moveAfterAttack && me.hidden)
-                ? 1.0 : 0.0);
+                ]);
           }
-          safe = min(safe, isSafe(i, pp)  || (moveAfterAttack && me.hidden)  ? 1.0 : 0.0);
+          safe = min(safe, ret[isSafe(i, pp)]);
         }
+      }
+      if (moveAfterAttack && me.hidden) {
+        safe = max(safe, 0.94);
       }
       return safe;
     }
@@ -1085,6 +1096,9 @@ class GameInfo {
     }
     void setSokokamo(Point[int] s) pure @safe nothrow {
       sokokamo = s;
+    }
+    int getPlayerKill() const pure @safe nothrow {
+      return playerKill;
     }
  private:
     int occupyCount;
