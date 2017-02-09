@@ -21,6 +21,7 @@ class PlayerTarou : Player {
     SamuraiInfo[] samuraiDup = null;
     Point[][6] probPointDup;
     int[][3] prevActions = [[0], [0], [0]];
+    Point[int] sokokamo;
     int skipCount;
 
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
@@ -40,6 +41,7 @@ class PlayerTarou : Player {
         .setZako(-100)
         .setKsnr(-50)
         .setChop(50)
+        .setYttk(50000)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -56,6 +58,7 @@ class PlayerTarou : Player {
         .setMuda(-1)
         .setKsnr(-50)
         .setChop(50)
+        .setYttk(50000)
 //        .setLand(20)
 //        .setMvat(22)
         .build();
@@ -74,6 +77,7 @@ class PlayerTarou : Player {
         .setMuda(-1)
         .setKsnr(-50)
         .setChop(50)
+        .setYttk(50000)
 //        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
@@ -586,6 +590,86 @@ class PlayerTarou : Player {
         }
       }
       
+            // 相手から見えるフィールド情報
+      int[][] field4E = info.field.map!(a => a.dup).array;
+      for (int i = 0; i < info.height; ++i) {
+        for (int j = 0; j < info.width; ++j) {
+          if (field4E[i][j] < 6) {
+            field4E[i][j] = (field4E[i][j] + 3) % 6;
+          } else if (field4E[i][j] == 9) {
+            field4E[i][j] = 0;
+          }
+        }
+      }
+      GameInfo info4E = new GameInfo(info);
+      info4E.field = field4E;
+      for (int i = 0; i < 3; ++i) {
+        SamuraiInfo tmp = info4E.samuraiInfo[i];
+        info4E.samuraiInfo[i] = info4E.samuraiInfo[i + 3];
+        info4E.samuraiInfo[i + 3] = tmp;
+      }
+      
+      if (samuraiMemory !is null) {
+        for (int i = 0; i < 3; ++i) {
+          if ( (info.samuraiInfo[i + 3].done && !samuraiMemory[i + 3].done)
+            || (info.turn % 6 == 1 && info.samuraiInfo[i + 3].done)
+            || (info.turn % 6 == 0 && !samuraiMemory[i + 3].done) ) {
+            with (info4E.samuraiInfo[i]) {
+              if (curX != -1 || curY != -1) {
+                sokokamo.remove(i + 3);
+                continue;
+              }
+            }
+            alias Tuple!(HistoryTree, "hist", Point, "atom") Node;
+            Node[] histories;
+            foreach (p; probPointDup[i + 3]) {
+              bool arieru = true;
+              for (int j = 0; j < 3; ++j) {
+                auto me = info.samuraiInfo[j];
+                bool yaba = me.hidden == 0;
+                foreach (v; prevActions[j]) {
+                  yaba |= 1 <= v && v <= 4;
+                }
+                if (yaba) {
+                  auto mep = Point(me.curX, me.curY);
+                  arieru &= GameInfo.isSafe(mep, p, j + 3);
+                }
+              }
+              if (!arieru) {
+                continue;
+              }
+              GameInfo jnfo = new GameInfo(info4E);
+              jnfo.weapon = i;
+              jnfo.samuraiInfo[i].curX = p.x;
+              jnfo.samuraiInfo[i].curY = p.y;
+              HistoryTree root = new HistoryTree(null, jnfo, 0);
+              next_plan2(root);
+              
+              auto hs = root.collectEnd;
+              foreach (h; hs) {
+                histories ~= Node(h, p);
+              }
+            }
+            if (histories.length == 0) {
+              sokokamo.remove(i + 3);
+              continue;
+            }
+            auto max_score = histories.map!(a => a.hist.getInfo().score(MERITS4ENEMY)).reduce!max;
+            auto bests = histories.filter!(a => a.hist.getInfo().score(MERITS4ENEMY) == max_score).array;
+            bool[Point] set;
+            foreach (best; bests) {
+              set[best.atom] = true;
+            }
+            if (set.length == 1) {
+              sokokamo[i + 3] = set.keys.front;
+            } else {
+              sokokamo.remove(i + 3);
+            }
+          }
+        }
+      }
+      info.setSokokamo = sokokamo;
+      
       if (samuraiMemory is null) {
         samuraiMemory = info.samuraiInfo.dup;
       } else {
@@ -632,13 +716,17 @@ class PlayerTarou : Player {
         }
       }
 
-      debug {
+      // debug {
         for (int i = 3; i < 6; ++i) {
           stderr.writeln("(", i, ")");
           stderr.writefln("  %d, %d", info.samuraiInfo[i].curX, info.samuraiInfo[i].curY);
           stderr.writeln("  ", probPointDup[i]);
+          if (i in sokokamo) {
+            auto p = sokokamo[i];
+            stderr.writefln("sokokamo: %d, %d", p.x, p.y);
+          }
         }
-      }
+      // }
     }
     struct Tegakari {
       int x, y;
@@ -833,12 +921,19 @@ class PlayerTarou : Player {
         info4E.samuraiInfo[i] = info4E.samuraiInfo[i + 3];
         info4E.samuraiInfo[i + 3] = tmp;
       }
+
       bool[][][] tugikuruDanger = new bool[][][](3, info.height, info.width);
       int[][] tugikuruTokoro = new int[][](info.height, info.width);
       for (int i = 0; i < 3; ++i) {
         with (info4E.samuraiInfo[i]) {
           if (curX == -1 || curY == -1) {
-            continue;
+            if (i + 3 in sokokamo) {
+              auto p = sokokamo[i + 3];
+              curX = p.x;
+              curY = p.y;
+            } else {
+              continue;
+            }
           }
           GameInfo jnfo = new GameInfo(info4E);
           jnfo.weapon = i;
@@ -865,7 +960,7 @@ class PlayerTarou : Player {
         }
       }
       info.setTugikuruDanger = tugikuruDanger;
-      
+            
       int[][][] yasyaNoKamae = new int[][][](3, info.height, info.width);
       for (int i = 0; i < 3; ++i) {
         for (int y = 0; y < info.height; ++y) {

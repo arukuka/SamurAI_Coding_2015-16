@@ -29,6 +29,7 @@ immutable class Merits {
     immutable double zako; // occupying score ga syoboi
     immutable double ysnk; // Yasya No Kamae
     immutable double ksnr; // kasanari
+    immutable double yttk; // yattaka?! (occupying point in sokokamo)
 
     static class MeritsBuilder : Builder!Merits {
       private:
@@ -55,6 +56,7 @@ immutable class Merits {
         double zako = 0;
         double ysnk = 0;
         double ksnr = 0;
+        double yttk = 0;
 
       public:
       pure:
@@ -156,6 +158,10 @@ immutable class Merits {
           this.ksnr = ksnr;
           return this;
         }
+        MeritsBuilder setYttk(double yttk) {
+          this.yttk = yttk;
+          return this;
+        }
     }
 
   private:
@@ -183,6 +189,7 @@ immutable class Merits {
       this.zako = mb.zako;
       this.ysnk = mb.ysnk;
       this.ksnr = mb.ksnr;
+      this.yttk = mb.yttk;
     }
 }
 
