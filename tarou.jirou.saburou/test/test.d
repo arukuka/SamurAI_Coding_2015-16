@@ -123,5 +123,28 @@ void main()
   arr.writeln;
   flags.writeln;
   test();
+  
+  class Node {
+    int v;
+    this() {
+      import std.random;
+      v = uniform(0, 8192);
+    }
+    override string toString() {
+      import std.conv;
+      return v.to!string;
+    }
+  }
+  Node[3] p;
+  for (int i = 0; i < 3; ++i) {
+    p[i] = new Node();
+  }
+  p.writeln;
+  for (int i = 0; i < 3; ++i) {
+    Node[3] q = p;
+    q[i] = new Node();
+    q.writeln;
+  }
+  p.writeln;
 }
 

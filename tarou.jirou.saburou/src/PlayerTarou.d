@@ -900,6 +900,18 @@ class PlayerTarou : Player {
       
       HistoryTree[] histories = HistoryTree[].init;
       
+      HistoryTree[3] preserved;
+      for (int i = 0; i < 3; ++i) {
+        GameInfo jnfo = new GameInfo(info);
+        jnfo.weapon = i;
+        HistoryTree r = new HistoryTree(null, jnfo, 0);
+        next_plan2(r);
+        auto h = r.collectEnd();
+        auto s = 0.0.reduce!max(h.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[i])));
+        auto b = h.filter!(a  => a.getInfo().score(NEXT_MERITS4WEAPON[i]) == s).front;
+        preserved[i] = b;
+      }
+      
       /+
       if (info.turn / 2 < 7) {
         enum weapons = [
@@ -975,17 +987,9 @@ class PlayerTarou : Player {
             
             double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
             
-            HistoryTree[3] nuri;
-            for (int j = 0; j < 3; ++j) {
-              GameInfo jnfo = new GameInfo(next.info);
-              jnfo.weapon = j;
-              HistoryTree r = new HistoryTree(null, jnfo, 0);
-              next_plan2(r);
-              auto h = r.collectEnd();
-              auto s = 0.0.reduce!max(h.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[j])));
-              auto b = h.filter!(a  => a.getInfo().score(NEXT_MERITS4WEAPON[j]) == s).front;
-              nuri[j] = b;
-            }
+            HistoryTree[3] nuri = preserved;
+            auto best = next_histories.filter!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon]) == next_max_score).front;
+            nuri[next.getInfo().weapon] = best;
             next.getInfo().miruKasanari(nuri);
             
             next.getInfo().findTarget();
