@@ -466,6 +466,7 @@ class PlayerTarou : Player {
                     tasikani |= Math.abs(x - p.x) + Math.abs(y - p.y) <= 1;
                   }
                   flag &= tasikani;
+                  flag &= diffPrevCount[i] > 0;
                   bool done = false;
                   int diffCount = 0;
                   for (int d = 0; flag && d < ox[i - 3].length; ++d) {
