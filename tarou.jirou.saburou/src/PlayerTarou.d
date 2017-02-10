@@ -461,6 +461,11 @@ class PlayerTarou : Player {
               for (int x = 0; x < info.width; ++x) {
                 for (int r = 0; r < 4; ++r) {
                   bool flag = true;
+                  bool tasikani = probPointDup[i].length == 0;
+                  foreach (p; probPointDup[i]) {
+                    tasikani |= Math.abs(x - p.x) + Math.abs(y - p.y) <= 1;
+                  }
+                  flag &= tasikani;
                   bool done = false;
                   int diffCount = 0;
                   for (int d = 0; flag && d < ox[i - 3].length; ++d) {
