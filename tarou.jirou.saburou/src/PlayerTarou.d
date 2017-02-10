@@ -768,6 +768,13 @@ class PlayerTarou : Player {
       
       if (latestField is null) {
         latestField = info.field.map!(a => a.dup).array;
+        for (int i = 0; i < info.height; ++i) {
+          for (int j = 0; j < info.width; ++j) {
+            if (latestField[i][j] == 9) {
+              latestField[i][j] = 3;
+            }
+          }
+        }
       } else {
         for (int y = 0; y < info.height; ++y) {
           for (int x = 0; x < info.width; ++x) {
@@ -1080,6 +1087,7 @@ class PlayerTarou : Player {
           GameInfo jnfo = new GameInfo(info);
           jnfo.weapon = i;
           jnfo.setReservedTarget(this.target);
+          jnfo.field = latestField.map!(a => a.dup).array;
           infos[i] = jnfo;
           HistoryTree root = new HistoryTree(null, jnfo, 0);
           plan2(root);
