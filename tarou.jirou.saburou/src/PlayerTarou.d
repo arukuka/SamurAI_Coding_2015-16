@@ -533,6 +533,26 @@ class PlayerTarou : Player {
                       flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) == 1;
                     }
                   }
+                  if (flag && info.field[y][x] == 9) {
+                    enum mimawari = [
+                      [0, 0],
+                      [0, 1],
+                      [0, -1],
+                      [1, 0],
+                      [-1, 0]
+                    ];
+                    foreach (d; mimawari) {
+                      int px = x + d[0];
+                      int py = y + d[1];
+                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                        continue;
+                      }
+                      if (3 <= info.field[py][px] && info.field[py][px] < 6 || info.field[py][px] == 9) {
+                        arr ~= Point(px, py);
+                      }
+                    }
+                    continue;
+                  }
                   if (flag) {
                     arr ~= Point(x, y);
                   }
