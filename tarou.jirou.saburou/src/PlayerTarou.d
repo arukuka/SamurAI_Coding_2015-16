@@ -1224,6 +1224,13 @@ class PlayerTarou : Player {
           
           best.paintUsingHistory();
           fieldDup = best.field.map!(a => a.dup).array;
+          for (int i = 0; i < info.height; ++i) {
+            for (int j = 0; j < info.width; ++j) {
+              if (info.field[i][j] == 9) {
+                fieldDup[i][j] = info.field[i][j];
+              }
+            }
+          }
           samuraiDup = best.samuraiInfo.dup;
           prevActions[best.weapon] = bestActions.dup;
         
