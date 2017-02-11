@@ -614,6 +614,11 @@ class GameInfo {
           hajimete &= !this.reservedTarget[i];
         }
         daijoubu = hajimete;
+        bool yaritin = false;
+        for (int i = 0; i < 3; ++i) {
+          yaritin |= this.target[i];
+        }
+        daijoubu &= yaritin;
       }
       with (this.samuraiInfo[this.weapon]) {
         for (int i = 0; i < 3; ++i) {
