@@ -605,6 +605,28 @@ class PlayerTarou : Player {
               }
             }
             arr = arr.sort.uniq.array;
+            stderr.writeln("arr : ", arr);
+            if (arr.length > 1) {
+              for (int j = 0; j <= tegakari[i].count; ++j) {
+                int dash = j;
+                int aruk = tegakari[i].count - j + 1;
+                int hani = j * 3 + aruk;
+                Point[] brr;
+                foreach (p; arr) {
+                  if (Math.abs(p.x - tegakari[i].x) + Math.abs(p.y - tegakari[i].y) <= hani) {
+                    brr ~= p;
+                  }
+                }
+                brr = brr.sort.uniq.array;
+                stderr.writeln(j, " :: brr : ", brr);
+                if (brr.length == 0) {
+                  continue;
+                } else {
+                  arr = brr;
+                  break;
+                }
+              }
+            }
             debug {
               foreach (k; arr) {
                 stderr.writeln("\t? : ", k);
