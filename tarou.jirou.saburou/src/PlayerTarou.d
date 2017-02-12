@@ -430,6 +430,18 @@ class PlayerTarou : Player {
           }
           probPointDup[i] = arr;
         }
+        
+        Point boti;
+        bool korosareta = false;
+        for (int i = 0; i < 3; ++i) {
+          stderr.writeln("cure: ", info.samuraiInfo[i].curePeriod, " ... ", samuraiDup[i].curX, ", ", samuraiDup[i].curY);
+          if (info.samuraiInfo[i].curePeriod == 17) {
+            // korosareta
+            korosareta = true;
+            boti.x = samuraiDup[i].curX;
+            boti.y = samuraiDup[i].curY;
+          }
+        }
 
         for (int i = 3; i < 6; ++i) {
           auto si = info.samuraiInfo[i];
@@ -471,6 +483,7 @@ class PlayerTarou : Player {
                   flag &= diffPrevCount[i] > 0;
                   bool done = false;
                   int diffCount = 0;
+                  bool koro = false;
                   for (int d = 0; flag && d < ox[i - 3].length; ++d) {
                     auto pos = GameInfo.rotate(r, ox[i - 3][d], oy[i - 3][d]);
                     int px = x + pos.x;
@@ -478,6 +491,7 @@ class PlayerTarou : Player {
                     if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
                       continue;
                     }
+                    koro |= px == boti.x && py == boti.y;
                     done |= info.field[py][px] == i;
                     flag &= info.field[py][px] == i
                         || info.field[py][px] == 9;
@@ -487,6 +501,29 @@ class PlayerTarou : Player {
                   }
                   flag &= done;
                   flag &= diffCount == diffPrevCount[i];
+                  if (korosareta) {
+                    flag &= koro;
+                  }
+                  if (samuraiDup[i].curX == -1 && samuraiDup[i].curY == -1) {
+                    enum mimawari = [
+                      [0, 0],
+                      [0, 1],
+                      [0, -1],
+                      [1, 0],
+                      [-1, 0]
+                    ];
+                    bool arieru = false;
+                    foreach (d; mimawari) {
+                      int px = x + d[0];
+                      int py = y + d[1];
+                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                        continue;
+                      }
+                      int v = fieldDup[py][px];
+                      arieru |= 3 <= v && v <= 5 || v == 9;
+                    }
+                    flag &= arieru;
+                  }
                   if (flag && (info.field[y][x] < 3 || info.field[y][x] == 8)) {
                     bool arieru = true;
                     if (fieldDup[y][x] != 9) {
