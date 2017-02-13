@@ -22,6 +22,7 @@ class PlayerTarou : Player {
     Point[][6] probPointDup;
     int[][3] prevActions = [[0], [0], [0]];
     Point[int] sokokamo;
+    Point[int] sokokamoAtom;
     int skipCount;
 
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
@@ -397,287 +398,292 @@ class PlayerTarou : Player {
       samuraiDup = info.samuraiInfo.dup;
     }
     void search(GameInfo info) {
-      if (fieldDup !is null && samuraiDup !is null) {
-        enum ox = [
-          [0, 0, 0, 0],
-          [0, 0, 1, 1, 2],
-          [-1, -1, -1, 0, 1, 1, 1]
-        ];
-        enum oy = [
-          [1, 2, 3, 4],
-          [1, 2, 0, 1, 0],
-          [0, -1, 1, 1, 1, -1, 0]
-        ];
-        alias Point = Tuple!(int, "x", int, "y");
-        int[6] diffPrevCount;
-        for (int y = 0; y < info.height; ++y) {
-          for (int x = 0; x < info.width; ++x) {
-            if (info.field[y][x] != fieldDup[y][x] && fieldDup[y][x] != 9 && info.field[y][x] != 9) {
-              int v = info.field[y][x];
-              if (3 <= v && v < 6) {
-                ++diffPrevCount[v];
-              }
+      if (fieldDup is null || samuraiDup is null) {
+        return;
+      }
+      enum ox = [
+        [0, 0, 0, 0],
+        [0, 0, 1, 1, 2],
+        [-1, -1, -1, 0, 1, 1, 1]
+      ];
+      enum oy = [
+        [1, 2, 3, 4],
+        [1, 2, 0, 1, 0],
+        [0, -1, 1, 1, 1, -1, 0]
+      ];
+      alias Point = Tuple!(int, "x", int, "y");
+      int[6] diffPrevCount;
+      for (int y = 0; y < info.height; ++y) {
+        for (int x = 0; x < info.width; ++x) {
+          if (info.field[y][x] != fieldDup[y][x] && fieldDup[y][x] != 9 && info.field[y][x] != 9) {
+            int v = info.field[y][x];
+            if (3 <= v && v < 6) {
+              ++diffPrevCount[v];
             }
           }
         }
-        for (int i = 3; i < 6; ++i) {
-          Point[] arr = [];
-          foreach (p; probPointDup[i]) {
-            int v = info.field[p.y][p.x];
-            if ((3 <= v && v < 6) || v == 9) {
-              arr ~= p;
-            }
-          }
-          probPointDup[i] = arr;
-        }
-        
-        Point boti;
-        bool korosareta = false;
-        for (int i = 0; i < 3; ++i) {
-          stderr.writeln("cure: ", info.samuraiInfo[i].curePeriod, " ... ", samuraiDup[i].curX, ", ", samuraiDup[i].curY);
-          if (info.samuraiInfo[i].curePeriod == 17) {
-            // korosareta
-            korosareta = true;
-            boti.x = samuraiDup[i].curX;
-            boti.y = samuraiDup[i].curY;
+      }
+      for (int i = 3; i < 6; ++i) {
+        Point[] arr = [];
+        foreach (p; probPointDup[i]) {
+          int v = info.field[p.y][p.x];
+          if ((3 <= v && v < 6) || v == 9) {
+            arr ~= p;
           }
         }
+        probPointDup[i] = arr;
+      }
+      
+      Point boti;
+      bool korosareta = false;
+      for (int i = 0; i < 3; ++i) {
+        stderr.writeln("cure: ", info.samuraiInfo[i].curePeriod, " ... ", samuraiDup[i].curX, ", ", samuraiDup[i].curY);
+        if (info.samuraiInfo[i].curePeriod == 17) {
+          // korosareta
+          korosareta = true;
+          boti.x = samuraiDup[i].curX;
+          boti.y = samuraiDup[i].curY;
+        }
+      }
 
-        for (int i = 3; i < 6; ++i) {
-          auto si = info.samuraiInfo[i];
-          if (si.curX == -1 && si.curY == -1) {
-            debug {
-              stderr.writeln("search ", i);
+      Point[][][] atom = new Point[][][](6, info.height, info.width);
+      for (int i = 3; i < 6; ++i) {
+        auto si = info.samuraiInfo[i];
+        if (si.curX == -1 && si.curY == -1) {
+          debug {
+            stderr.writeln("search ", i);
+          }
+          if (diffPrevCount[i] == 0) {
+            if ( (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+                || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+                || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
+              probPointDup[i] = probPointDup[i].init;
             }
-            if (diffPrevCount[i] == 0) {
-              if ( (info.samuraiInfo[i].done && !samuraiMemory[i].done)
-                  || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
-                  || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
-                probPointDup[i] = probPointDup[i].init;
-              }
-              if (probPointDup[i].length == 1) {
-                Point p = probPointDup[i].front;
-                int x = p.x;
-                int y = p.y;
-                debug {
-                  stderr.writeln("\t\tfinally got it! : ", p);
-                }
-                si.curX = x;
-                si.curY = y;
-                info.samuraiInfo[i] = si;
-                probPointDup[i] = probPointDup[i].init;
-              }
-              info.setProbPlaces(i, probPointDup[i]);
-              continue;
-            }
-            Point[] arr;
-            for (int y = 0; y < info.height; ++y) {
-              for (int x = 0; x < info.width; ++x) {
-                for (int r = 0; r < 4; ++r) {
-                  bool flag = true;
-                  bool tasikani = probPointDup[i].length == 0;
-                  foreach (p; probPointDup[i]) {
-                    tasikani |= Math.abs(x - p.x) + Math.abs(y - p.y) <= 1;
-                  }
-                  flag &= tasikani;
-                  flag &= diffPrevCount[i] > 0;
-                  bool done = false;
-                  int diffCount = 0;
-                  bool koro = false;
-                  for (int d = 0; flag && d < ox[i - 3].length; ++d) {
-                    auto pos = GameInfo.rotate(r, ox[i - 3][d], oy[i - 3][d]);
-                    int px = x + pos.x;
-                    int py = y + pos.y;
-                    if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
-                      continue;
-                    }
-                    koro |= px == boti.x && py == boti.y;
-                    done |= info.field[py][px] == i;
-                    flag &= info.field[py][px] == i
-                        || info.field[py][px] == 9;
-                    if (info.field[py][px] == i && info.field[py][px] != fieldDup[py][px] && fieldDup[py][px] != 9) {
-                      ++diffCount;
-                    }
-                  }
-                  flag &= done;
-                  flag &= diffCount == diffPrevCount[i];
-                  if (korosareta) {
-                    flag &= koro;
-                  }
-                  if (samuraiDup[i].curX == -1 && samuraiDup[i].curY == -1) {
-                    enum mimawari = [
-                      [0, 0],
-                      [0, 1],
-                      [0, -1],
-                      [1, 0],
-                      [-1, 0]
-                    ];
-                    bool arieru = false;
-                    foreach (d; mimawari) {
-                      int px = x + d[0];
-                      int py = y + d[1];
-                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
-                        continue;
-                      }
-                      int v = fieldDup[py][px];
-                      arieru |= 3 <= v && v <= 5 || v == 9;
-                    }
-                    flag &= arieru;
-                  }
-                  if (flag && (info.field[y][x] < 3 || info.field[y][x] == 8)) {
-                    bool arieru = true;
-                    if (fieldDup[y][x] != 9) {
-                      with (samuraiDup[i]) {
-                        if (curX != x || curY != y) {
-                          arieru = false;
-                        }
-                      }
-                    }
-                    if (arieru) {
-                      enum mawari = [
-                        [0, 1],
-                        [0, -1],
-                        [1, 0],
-                        [-1, 0]
-                      ];
-                      foreach (d; mawari) {
-                        int px = x + d[0];
-                        int py = y + d[1];
-                        if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
-                          continue;
-                        }
-                        if (3 <= info.field[py][px] && info.field[py][px] < 6) {
-                          arr ~= Point(px, py);
-                        }
-                      }
-                      continue;
-                    }
-                  }
-                  flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
-                  if (samuraiDup[i].curX != -1 && samuraiDup[i].curY != -1) {
-                    if (flag && Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) == 0) {
-                      enum mimawari = [
-                        [0, 0],
-                        [0, 1],
-                        [0, -1],
-                        [1, 0],
-                        [-1, 0]
-                      ];
-                      foreach (d; mimawari) {
-                        int px = x + d[0];
-                        int py = y + d[1];
-                        if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
-                          continue;
-                        }
-                        if (3 <= info.field[py][px] && info.field[py][px] < 6) {
-                          arr ~= Point(px, py);
-                        }
-                      }
-                      continue;
-                    } else {
-                      flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) == 1;
-                    }
-                  }
-                  if (flag && info.field[y][x] == 9) {
-                    enum mimawari = [
-                      [0, 0],
-                      [0, 1],
-                      [0, -1],
-                      [1, 0],
-                      [-1, 0]
-                    ];
-                    foreach (d; mimawari) {
-                      int px = x + d[0];
-                      int py = y + d[1];
-                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
-                        continue;
-                      }
-                      if (3 <= info.field[py][px] && info.field[py][px] < 6 || info.field[py][px] == 9) {
-                        arr ~= Point(px, py);
-                      }
-                    }
-                    continue;
-                  }
-                  if (flag) {
-                    arr ~= Point(x, y);
-                  }
-                }
-              }
-            }
-            arr = arr.sort.uniq.array;
-            stderr.writeln("arr : ", arr);
-            if (arr.length > 1) {
-              for (int j = 0; j <= tegakari[i].count; ++j) {
-                int dash = j;
-                int aruk = tegakari[i].count - j + 1;
-                int hani = j * 3 + aruk;
-                Point[] brr;
-                foreach (p; arr) {
-                  if (Math.abs(p.x - tegakari[i].x) + Math.abs(p.y - tegakari[i].y) <= hani) {
-                    brr ~= p;
-                  }
-                }
-                brr = brr.sort.uniq.array;
-                stderr.writeln(j, " :: brr : ", brr);
-                if (brr.length == 0) {
-                  continue;
-                } else {
-                  arr = brr;
-                  break;
-                }
-              }
-            }
-            debug {
-              foreach (k; arr) {
-                stderr.writeln("\t? : ", k);
-              }
-            }
-            if (arr.length == 1) {
-              Point p = arr.front;
+            if (probPointDup[i].length == 1) {
+              Point p = probPointDup[i].front;
               int x = p.x;
               int y = p.y;
               debug {
-                stderr.writeln("\t\tgot it! : ", p);
+                stderr.writeln("\t\tfinally got it! : ", p);
               }
               si.curX = x;
               si.curY = y;
               info.samuraiInfo[i] = si;
               probPointDup[i] = probPointDup[i].init;
-              info.setProbPlaces(i, probPointDup[i]);
-            } else if (arr.length == 0) {
-              if ( (info.samuraiInfo[i].done && !samuraiMemory[i].done)
-                  || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
-                  || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
-                probPointDup[i] = probPointDup[i].init;
-              }
-              if (probPointDup[i].length == 1) {
-                Point p = probPointDup[i].front;
-                int x = p.x;
-                int y = p.y;
-                debug {
-                  stderr.writeln("\t\tfinally got it! : ", p);
-                }
-                si.curX = x;
-                si.curY = y;
-                info.samuraiInfo[i] = si;
-                probPointDup[i] = probPointDup[i].init;
-              }
-              info.setProbPlaces(i, probPointDup[i]);
-            } else {
-              info.setProbPlaces(i, arr);
-              probPointDup[i] = arr;
             }
-          } else {
+            info.setProbPlaces(i, probPointDup[i]);
+            continue;
+          }
+          Point[] arr;
+          for (int y = 0; y < info.height; ++y) {
+            for (int x = 0; x < info.width; ++x) {
+              atom[i][y][x] = Point(-1, -1);
+              for (int r = 0; r < 4; ++r) {
+                bool flag = true;
+                bool tasikani = probPointDup[i].length == 0;
+                foreach (p; probPointDup[i]) {
+                  tasikani |= Math.abs(x - p.x) + Math.abs(y - p.y) <= 1;
+                }
+                flag &= tasikani;
+                flag &= diffPrevCount[i] > 0;
+                bool done = false;
+                int diffCount = 0;
+                bool koro = false;
+                for (int d = 0; flag && d < ox[i - 3].length; ++d) {
+                  auto pos = GameInfo.rotate(r, ox[i - 3][d], oy[i - 3][d]);
+                  int px = x + pos.x;
+                  int py = y + pos.y;
+                  if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                    continue;
+                  }
+                  koro |= px == boti.x && py == boti.y;
+                  done |= info.field[py][px] == i;
+                  flag &= info.field[py][px] == i
+                      || info.field[py][px] == 9;
+                  if (info.field[py][px] == i && info.field[py][px] != fieldDup[py][px] && fieldDup[py][px] != 9) {
+                    ++diffCount;
+                  }
+                }
+                flag &= done;
+                flag &= diffCount == diffPrevCount[i];
+                if (korosareta) {
+                  flag &= koro;
+                }
+                if (samuraiDup[i].curX == -1 && samuraiDup[i].curY == -1) {
+                  enum mimawari = [
+                    [0, 0],
+                    [0, 1],
+                    [0, -1],
+                    [1, 0],
+                    [-1, 0]
+                  ];
+                  bool arieru = false;
+                  foreach (d; mimawari) {
+                    int px = x + d[0];
+                    int py = y + d[1];
+                    if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                      continue;
+                    }
+                    int v = fieldDup[py][px];
+                    arieru |= 3 <= v && v <= 5 || v == 9;
+                  }
+                  flag &= arieru;
+                }
+                if (flag && (info.field[y][x] < 3 || info.field[y][x] == 8)) {
+                  bool arieru = true;
+                  if (fieldDup[y][x] != 9) {
+                    with (samuraiDup[i]) {
+                      if (curX != x || curY != y) {
+                        arieru = false;
+                      }
+                    }
+                  }
+                  if (arieru) {
+                    enum mawari = [
+                      [0, 1],
+                      [0, -1],
+                      [1, 0],
+                      [-1, 0]
+                    ];
+                    foreach (d; mawari) {
+                      int px = x + d[0];
+                      int py = y + d[1];
+                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                        continue;
+                      }
+                      if (3 <= info.field[py][px] && info.field[py][px] < 6) {
+                        arr ~= Point(px, py);
+                      }
+                    }
+                    continue;
+                  }
+                }
+                flag &= (info.field[y][x] >= 3 && info.field[y][x] < 6) || info.field[y][x] == 9;
+                if (samuraiDup[i].curX != -1 && samuraiDup[i].curY != -1) {
+                  if (flag && Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) == 0) {
+                    enum mimawari = [
+                      [0, 0],
+                      [0, 1],
+                      [0, -1],
+                      [1, 0],
+                      [-1, 0]
+                    ];
+                    foreach (d; mimawari) {
+                      int px = x + d[0];
+                      int py = y + d[1];
+                      if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                        continue;
+                      }
+                      if (3 <= info.field[py][px] && info.field[py][px] < 6) {
+                        arr ~= Point(px, py);
+                        atom[i][py][px] = Point(x, y);
+                      }
+                    }
+                    continue;
+                  } else {
+                    flag &= Math.abs(samuraiDup[i].curX - x) + Math.abs(samuraiDup[i].curY - y) == 1;
+                  }
+                }
+                if (flag && info.field[y][x] == 9) {
+                  enum mimawari = [
+                    [0, 0],
+                    [0, 1],
+                    [0, -1],
+                    [1, 0],
+                    [-1, 0]
+                  ];
+                  foreach (d; mimawari) {
+                    int px = x + d[0];
+                    int py = y + d[1];
+                    if (px < 0 || info.width <= px || py < 0 || info.height <= py) {
+                      continue;
+                    }
+                    if (3 <= info.field[py][px] && info.field[py][px] < 6 || info.field[py][px] == 9) {
+                      arr ~= Point(px, py);
+                      atom[i][py][px] = Point(x, y);
+                    }
+                  }
+                  continue;
+                }
+                if (flag) {
+                  arr ~= Point(x, y);
+                }
+              }
+            }
+          }
+          arr = arr.sort.uniq.array;
+          stderr.writeln("arr : ", arr);
+          if (arr.length > 1) {
+            for (int j = 0; j <= tegakari[i].count; ++j) {
+              int dash = j;
+              int aruk = tegakari[i].count - j + 1;
+              int hani = j * 3 + aruk;
+              Point[] brr;
+              foreach (p; arr) {
+                if (Math.abs(p.x - tegakari[i].x) + Math.abs(p.y - tegakari[i].y) <= hani) {
+                  brr ~= p;
+                }
+              }
+              brr = brr.sort.uniq.array;
+              stderr.writeln(j, " :: brr : ", brr);
+              if (brr.length == 0) {
+                continue;
+              } else {
+                arr = brr;
+                break;
+              }
+            }
+          }
+          debug {
+            foreach (k; arr) {
+              stderr.writeln("\t? : ", k);
+            }
+          }
+          if (arr.length == 1) {
+            Point p = arr.front;
+            int x = p.x;
+            int y = p.y;
+            debug {
+              stderr.writeln("\t\tgot it! : ", p);
+            }
+            si.curX = x;
+            si.curY = y;
+            info.samuraiInfo[i] = si;
             probPointDup[i] = probPointDup[i].init;
             info.setProbPlaces(i, probPointDup[i]);
-            debug {
-              stderr.writeln("I see ", i, " : (", si.curX, ", ", si.curY, ")");
+          } else if (arr.length == 0) {
+            if ( (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+                || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+                || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
+              probPointDup[i] = probPointDup[i].init;
             }
+            if (probPointDup[i].length == 1) {
+              Point p = probPointDup[i].front;
+              int x = p.x;
+              int y = p.y;
+              debug {
+                stderr.writeln("\t\tfinally got it! : ", p);
+              }
+              si.curX = x;
+              si.curY = y;
+              info.samuraiInfo[i] = si;
+              probPointDup[i] = probPointDup[i].init;
+            }
+            info.setProbPlaces(i, probPointDup[i]);
+          } else {
+            info.setProbPlaces(i, arr);
+            probPointDup[i] = arr;
+          }
+        } else {
+          probPointDup[i] = probPointDup[i].init;
+          info.setProbPlaces(i, probPointDup[i]);
+          debug {
+            stderr.writeln("I see ", i, " : (", si.curX, ", ", si.curY, ")");
           }
         }
       }
       
-            // 相手から見えるフィールド情報
+      // 相手から見えるフィールド情報
       int[][] field4E = info.field.map!(a => a.dup).array;
       for (int i = 0; i < info.height; ++i) {
         for (int j = 0; j < info.width; ++j) {
@@ -696,111 +702,112 @@ class PlayerTarou : Player {
         info4E.samuraiInfo[i + 3] = tmp;
       }
       
-      if (samuraiMemory !is null) {
-        for (int i = 0; i < 3; ++i) {
-          if ( (info.samuraiInfo[i + 3].done && !samuraiMemory[i + 3].done)
-            || (info.turn % 6 == 1 && info.samuraiInfo[i + 3].done)
-            || (info.turn % 6 == 0 && !samuraiMemory[i + 3].done) ) {
-            with (info4E.samuraiInfo[i]) {
-              if (curX != -1 || curY != -1) {
-                sokokamo.remove(i + 3);
-                continue;
+      for (int i = 0; i < 3; ++i) {
+        with (info4E.samuraiInfo[i]) {
+          if (curX != -1 || curY != -1) {
+            sokokamo.remove(i + 3);
+            continue;
+          }
+        }
+        if ( (info.samuraiInfo[i + 3].done && !samuraiMemory[i + 3].done)
+          || (info.turn % 6 == 1 && info.samuraiInfo[i + 3].done)
+          || (info.turn % 6 == 0 && !samuraiMemory[i + 3].done) ) {
+          alias Tuple!(HistoryTree, "hist", Point, "atom") Node;
+          Node[] histories;
+          foreach (p; probPointDup[i + 3]) {
+            bool arieru = true;
+            for (int j = 0; j < 3; ++j) {
+              auto me = info.samuraiInfo[j];
+              bool yaba = me.hidden == 0;
+              foreach (v; prevActions[j]) {
+                yaba |= 1 <= v && v <= 4;
+              }
+              if (yaba) {
+                auto mep = Point(me.curX, me.curY);
+                arieru &= GameInfo.isSafe(mep, p, j + 3);
               }
             }
-            alias Tuple!(HistoryTree, "hist", Point, "atom") Node;
-            Node[] histories;
-            foreach (p; probPointDup[i + 3]) {
-              bool arieru = true;
-              for (int j = 0; j < 3; ++j) {
-                auto me = info.samuraiInfo[j];
-                bool yaba = me.hidden == 0;
-                foreach (v; prevActions[j]) {
-                  yaba |= 1 <= v && v <= 4;
-                }
-                if (yaba) {
-                  auto mep = Point(me.curX, me.curY);
-                  arieru &= GameInfo.isSafe(mep, p, j + 3);
-                }
-              }
-              if (!arieru) {
-                continue;
-              }
-              GameInfo jnfo = new GameInfo(info4E);
-              jnfo.weapon = i;
-              jnfo.samuraiInfo[i].curX = p.x;
-              jnfo.samuraiInfo[i].curY = p.y;
-              HistoryTree root = new HistoryTree(null, jnfo, 0);
-              next_plan2(root);
-              
-              auto hs = root.collectEnd;
-              foreach (h; hs) {
-                histories ~= Node(h, p);
-              }
-            }
-            if (histories.length == 0) {
-              sokokamo.remove(i + 3);
+            if (!arieru) {
               continue;
             }
-            auto max_score = histories.map!(a => a.hist.getInfo().score(MERITS4ENEMY)).reduce!max;
-            auto bests = histories.filter!(a => a.hist.getInfo().score(MERITS4ENEMY) == max_score).array;
-            bool[Point] set;
-            foreach (best; bests) {
-              set[best.atom] = true;
+            GameInfo jnfo = new GameInfo(info4E);
+            jnfo.weapon = i;
+            jnfo.samuraiInfo[i].curX = p.x;
+            jnfo.samuraiInfo[i].curY = p.y;
+            HistoryTree root = new HistoryTree(null, jnfo, 0);
+            next_plan2(root);
+            
+            auto hs = root.collectEnd;
+            foreach (h; hs) {
+              histories ~= Node(h, p);
             }
-            if (set.length == 1) {
-              sokokamo[i + 3] = set.keys.front;
+          }
+          if (histories.length == 0) {
+            sokokamo.remove(i + 3);
+            continue;
+          }
+          auto max_score = histories.map!(a => a.hist.getInfo().score(MERITS4ENEMY)).reduce!max;
+          auto bests = histories.filter!(a => a.hist.getInfo().score(MERITS4ENEMY) == max_score).array;
+          bool[Point] set;
+          foreach (best; bests) {
+            set[best.atom] = true;
+          }
+          if (set.length == 1) {
+            Point s = set.keys.front;
+            sokokamo[i + 3] = s;
+            if (atom[i + 3][s.y][s.x] == Point(-1, -1)) {
+              sokokamoAtom[i + 3] = s;
             } else {
-              sokokamo.remove(i + 3);
+              sokokamoAtom[i + 3] = atom[i + 3][s.y][s.x];
             }
+          } else {
+            sokokamo.remove(i + 3);
           }
         }
       }
       info.setSokokamo = sokokamo;
+      info.setSokokamoAtom = sokokamoAtom;
       
-      if (samuraiMemory is null) {
-        samuraiMemory = info.samuraiInfo.dup;
-      } else {
-        for (int i = 3; i < 6; ++i) {
-          if ((info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
-          || (info.samuraiInfo[i].done && !samuraiMemory[i].done)
-          || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
-          || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
-            samuraiMemory[i].curX = info.samuraiInfo[i].curX;
-            samuraiMemory[i].curY = info.samuraiInfo[i].curY;
-            if (info.samuraiInfo[i].curX == -1 || info.samuraiInfo[i].curY == -1) {
-              tegakari[i].count++;
-            } else {
-              tegakari[i].x = info.samuraiInfo[i].curX;
-              tegakari[i].y = info.samuraiInfo[i].curY;
-              tegakari[i].count = 0;
-            }
-            debug {
-              stderr.writeln("\trenew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
-              stderr.writeln("\t\t because : ", [(info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
-          , (info.samuraiInfo[i].done && !samuraiMemory[i].done)
-          , (info.turn % 6 == 1 && info.samuraiInfo[i].done)
-          , (info.turn % 6 == 0 && !samuraiMemory[i].done)]);
-            }
-          } else if (info.samuraiInfo[i].curePeriod > 0) {
-            samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
-            samuraiMemory[i].curY = info.samuraiInfo[i].curY = info.samuraiInfo[i].homeY;
+      for (int i = 3; i < 6; ++i) {
+        if ((info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
+        || (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+        || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+        || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
+          samuraiMemory[i].curX = info.samuraiInfo[i].curX;
+          samuraiMemory[i].curY = info.samuraiInfo[i].curY;
+          if (info.samuraiInfo[i].curX == -1 || info.samuraiInfo[i].curY == -1) {
+            tegakari[i].count++;
+          } else {
             tegakari[i].x = info.samuraiInfo[i].curX;
             tegakari[i].y = info.samuraiInfo[i].curY;
             tegakari[i].count = 0;
-            probPointDup[i] = probPointDup[i].init;
-            info.setProbPlaces(i, probPointDup[i]);
-            debug {
-              stderr.writeln("\tchange ", i, " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
-            }
-          } else {
-            info.samuraiInfo[i].curX = samuraiMemory[i].curX;
-            info.samuraiInfo[i].curY = samuraiMemory[i].curY;
-            debug {
-              stderr.writeln("\tknew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
-            }
           }
-          samuraiMemory[i].done = info.samuraiInfo[i].done;
+          debug {
+            stderr.writeln("\trenew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+            stderr.writeln("\t\t because : ", [(info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
+        , (info.samuraiInfo[i].done && !samuraiMemory[i].done)
+        , (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+        , (info.turn % 6 == 0 && !samuraiMemory[i].done)]);
+          }
+        } else if (info.samuraiInfo[i].curePeriod > 0) {
+          samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
+          samuraiMemory[i].curY = info.samuraiInfo[i].curY = info.samuraiInfo[i].homeY;
+          tegakari[i].x = info.samuraiInfo[i].curX;
+          tegakari[i].y = info.samuraiInfo[i].curY;
+          tegakari[i].count = 0;
+          probPointDup[i] = probPointDup[i].init;
+          info.setProbPlaces(i, probPointDup[i]);
+          debug {
+            stderr.writeln("\tchange ", i, " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+          }
+        } else {
+          info.samuraiInfo[i].curX = samuraiMemory[i].curX;
+          info.samuraiInfo[i].curY = samuraiMemory[i].curY;
+          debug {
+            stderr.writeln("\tknew ", i , " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+          }
         }
+        samuraiMemory[i].done = info.samuraiInfo[i].done;
       }
 
       // debug {
@@ -811,6 +818,8 @@ class PlayerTarou : Player {
           if (i in sokokamo) {
             auto p = sokokamo[i];
             stderr.writefln("sokokamo: %d, %d", p.x, p.y);
+            auto q = sokokamoAtom[i];
+            stderr.writefln("\tsokokamo atom: %d, %d", q.x, q.y);
           }
         }
       // }
@@ -826,6 +835,7 @@ class PlayerTarou : Player {
         tegakari[i].y = info.samuraiInfo[i].homeY;
         tegakari[i].count = 0;
       }
+      samuraiMemory = info.samuraiInfo.dup;
     }
     bool[3] target;
     override void play(GameInfo info) @trusted {

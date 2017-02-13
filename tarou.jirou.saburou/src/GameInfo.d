@@ -98,6 +98,7 @@ class GameInfo {
       this.beActive = info.beActive;
       
       this.sokokamo = info.sokokamo;
+      this.sokokamoAtom = info.sokokamoAtom;
       this.yattakaCount = info.yattakaCount;
     }
     
@@ -269,6 +270,8 @@ class GameInfo {
       isKilled = false;
       yattakaCount = 0;
       int groupCount = 0;
+      int yc = 0;
+      int yac = 0;
 
       isAttackContain |= true;
 
@@ -353,7 +356,13 @@ class GameInfo {
               if (j in sokokamo) {
                 auto p = sokokamo[j];
                 if (p.x == nx && p.y == ny) {
-                  ++yattakaCount;
+                  ++yc;
+                }
+              }
+              if (j in sokokamoAtom) {
+                auto p = sokokamoAtom[j];
+                if (p.x == nx && p.y == ny) {
+                  ++yac;
                 }
               }
             }
@@ -361,6 +370,7 @@ class GameInfo {
         }
       }
 
+      yattakaCount = min(yc, yac);
       groupLevel = cast(double) groupCount / size[this.weapon];
       
       this.occupiedPointsArray ~= painted;
@@ -893,13 +903,9 @@ class GameInfo {
         }
         Point sip = Point(si.curX, si.curY);
         if (sip.x == -1 || sip.y == -1) {
-          if (i in sokokamo) {
-            sip = sokokamo[i];
-          } else {
-            continue;
-          }
+          continue;
         }
-        if (si.curX == si.homeX && si.curY == si.homeY) {
+        if (sip.x == si.homeX && sip.y == si.homeY) {
           continue;
         }
         if (reservedTarget[i - 3]) {
@@ -909,6 +915,30 @@ class GameInfo {
         SamuraiInfo me = this.samuraiInfo[this.weapon];
         Point mep = Point(me.curX, me.curY);
         this.target[i - 3] = !GameInfo.isSafe(mep, sip, this.weapon + 3);
+      }
+      for (int i = 3; i < 6; ++i) {
+        SamuraiInfo si = this.samuraiInfo[i];
+        if (!si.done) {
+          continue;
+        }
+        if (i !in sokokamo) {
+          continue;
+        }
+        Point sip = sokokamo[i];
+        Point sipa = sokokamoAtom[i];
+        if (sip.x == si.homeX && sip.y == si.homeY) {
+          continue;
+        }
+        if (sipa.x == si.homeX && sipa.y == si.homeY) {
+          continue;
+        }
+        if (reservedTarget[i - 3]) {
+          continue;
+        }
+        // in in kill zone double
+        SamuraiInfo me = this.samuraiInfo[this.weapon];
+        Point mep = Point(me.curX, me.curY);
+        this.target[i - 3] = !GameInfo.isSafe(mep, sip, this.weapon + 3) && !GameInfo.isSafe(mep, sipa, this.weapon + 3);
       }
     }
     void setReservedTarget(bool[3] reservedTarget) pure @safe nothrow {
@@ -1102,6 +1132,9 @@ class GameInfo {
     void setSokokamo(Point[int] s) pure @safe nothrow {
       sokokamo = s;
     }
+    void setSokokamoAtom(Point[int] s) pure @safe nothrow {
+      sokokamoAtom = s;
+    }
     int getPlayerKill() const pure @safe nothrow {
       return playerKill;
     }
@@ -1133,6 +1166,7 @@ class GameInfo {
     bool[3] beActive;
     int kasanari;
     Point[int] sokokamo;
+    Point[int] sokokamoAtom;
 
     string[] read() {
       string line = "";
