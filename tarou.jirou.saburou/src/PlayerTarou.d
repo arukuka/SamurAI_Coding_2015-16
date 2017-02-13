@@ -1172,12 +1172,12 @@ class PlayerTarou : Player {
           histories ~= root.collect();
         }
 
-        alias node = Tuple!(ulong, "index", double, "score");
-        node[] nodes = new node[histories.length];
+        alias Node = Tuple!(ulong, "index", double, "score");
+        Node[] nodes = new Node[histories.length];
         if (info.turn/6 == 15) {
           foreach (i, next; histories) {
             double v = next.getInfo().score(LAST_TURN_MERIT);
-            nodes[i] = node(i, v);
+            nodes[i] = Node(i, v);
           }
         } else {
           foreach (i, next; histories) {
@@ -1197,7 +1197,7 @@ class PlayerTarou : Player {
             double v = next.getInfo().score(MERITS4WEAPON[next.getInfo().weapon])
                         + next_max_score
                         - infos[next.getInfo().weapon].score(MERITS4WEAPON[next.getInfo().weapon]);
-            nodes[i] = node(i, v);
+            nodes[i] = Node(i, v);
           }
         }
         double max_score = nodes.map!(a => a.score).reduce!max;

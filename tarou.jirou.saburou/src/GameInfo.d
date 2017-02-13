@@ -652,7 +652,13 @@ class GameInfo {
         with (this.samuraiInfo[this.weapon]) {
           int v = yasyaNoKamae[this.weapon][curY][curX];
           if ( v == i ) {
-            safe = min(safe, ret2[isSafe(i, p)]);
+            if (this.side == 1 && !si.done) {
+              immutable Point mep = Point(me.curX, me.curY);
+              safe = min(safe, ret[isSafeW2T(mep, p, i)
+                  || ((!isAttackContain || moveAfterAttack) && me.hidden && isSafeW2A(mep, p, i))
+                  ]);
+            }
+            safe = min(safe, ret[isSafe(i, p)]);
             continue;
           }
         }
@@ -660,7 +666,7 @@ class GameInfo {
           if (this.side == 1 && !si.done) {
             immutable Point mep = Point(me.curX, me.curY);
             safe = min(safe, ret[isSafeW2T(mep, p, i)
-                || (!isAttackContain && me.hidden && isSafeW2A(mep, p, i))
+                || ((!isAttackContain || moveAfterAttack) && me.hidden && isSafeW2A(mep, p, i))
                 ]);
           }
           safe = min(safe, ret[isSafe(i, p)]);
@@ -672,7 +678,7 @@ class GameInfo {
           if (this.side == 1 && !si.done) {
             immutable Point mep = Point(me.curX, me.curY);
             safe = min(safe, ret[isSafeW2T(mep, pp, i)
-                || (!isAttackContain && me.hidden && isSafeW2A(mep, pp, i))
+                || ((!isAttackContain || moveAfterAttack) && me.hidden && isSafeW2A(mep, pp, i))
                 ]);
           }
           safe = min(safe, ret[isSafe(i, pp)]);
@@ -683,6 +689,7 @@ class GameInfo {
       }
       return safe;
     }
+
 
     double deployLevel() const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
