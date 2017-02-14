@@ -1109,7 +1109,8 @@ class GameInfo {
       if (period >= comboActions.length) {
         return false;
       }
-      return actions == comboActions[period][this.weapon];
+      auto actionsWasabiNuki = actions.filter!(a => a != 9);
+      return actionsWasabiNuki.equal = comboActions[period][this.weapon];
     }
     void initTarget() pure @safe nothrow {
       this.target = false;
