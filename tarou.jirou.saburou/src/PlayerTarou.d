@@ -24,6 +24,8 @@ class PlayerTarou : Player {
     Point[int] sokokamo;
     Point[int] sokokamoAtom;
     int skipCount;
+    int[][][] naname2dangerAtom = new int[][][](6, 15, 15);
+    bool[3] yabe;
 
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(40)
@@ -614,7 +616,7 @@ class PlayerTarou : Player {
           arr = arr.sort.uniq.array;
           stderr.writeln("arr : ", arr);
           if (arr.length > 1) {
-            for (int j = 0; j <= tegakari[i].count; ++j) {
+            for (int j = 1; j <= tegakari[i].count; ++j) {
               int dash = j;
               int aruk = tegakari[i].count - j + 1;
               int hani = j * 3 + aruk;
@@ -768,8 +770,27 @@ class PlayerTarou : Player {
       info.setSokokamo = sokokamo;
       info.setSokokamoAtom = sokokamoAtom;
       
+      bool[6] ugoita;
       for (int i = 3; i < 6; ++i) {
-        if ((info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
+        ugoita[i] = ((info.samuraiInfo[i].done && !samuraiMemory[i].done)
+        || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
+        || (info.turn % 6 == 0 && !samuraiMemory[i].done));
+      }
+      
+      // TODO:curePeriodを優先
+      for (int i = 3; i < 6; ++i) {
+        if (info.samuraiInfo[i].curePeriod > 0) {
+          samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
+          samuraiMemory[i].curY = info.samuraiInfo[i].curY = info.samuraiInfo[i].homeY;
+          tegakari[i].x = info.samuraiInfo[i].curX;
+          tegakari[i].y = info.samuraiInfo[i].curY;
+          tegakari[i].count = 0;
+          probPointDup[i] = probPointDup[i].init;
+          info.setProbPlaces(i, probPointDup[i]);
+          debug {
+            stderr.writeln("\tchange ", i, " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
+          }
+        } else if ((info.samuraiInfo[i].curX != -1 && info.samuraiInfo[i].curY != -1)
         || (info.samuraiInfo[i].done && !samuraiMemory[i].done)
         || (info.turn % 6 == 1 && info.samuraiInfo[i].done)
         || (info.turn % 6 == 0 && !samuraiMemory[i].done)) {
@@ -788,17 +809,6 @@ class PlayerTarou : Player {
         , (info.samuraiInfo[i].done && !samuraiMemory[i].done)
         , (info.turn % 6 == 1 && info.samuraiInfo[i].done)
         , (info.turn % 6 == 0 && !samuraiMemory[i].done)]);
-          }
-        } else if (info.samuraiInfo[i].curePeriod > 0) {
-          samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
-          samuraiMemory[i].curY = info.samuraiInfo[i].curY = info.samuraiInfo[i].homeY;
-          tegakari[i].x = info.samuraiInfo[i].curX;
-          tegakari[i].y = info.samuraiInfo[i].curY;
-          tegakari[i].count = 0;
-          probPointDup[i] = probPointDup[i].init;
-          info.setProbPlaces(i, probPointDup[i]);
-          debug {
-            stderr.writeln("\tchange ", i, " : (", samuraiMemory[i].curX, ", ", samuraiMemory[i].curY, ")");
           }
         } else {
           info.samuraiInfo[i].curX = samuraiMemory[i].curX;
@@ -823,6 +833,104 @@ class PlayerTarou : Player {
           }
         }
       // }
+      
+      // TODO:よく見直すこと！　要検証！
+      for (int j = 3; j < 6; ++j) {
+        if (info.samuraiInfo[j].curX != -1 || info.samuraiInfo[j].curY != -1) {
+          for (int y = 0; y < 15; ++y) {
+            for (int x = 0; x < 15; ++x) {
+              naname2dangerAtom[j][y][x] = 0;
+            }
+          }
+          continue;
+        }
+        if (probPointDup[j].length) {
+          for (int y = 0; y < 15; ++y) {
+            for (int x = 0; x < 15; ++x) {
+              naname2dangerAtom[j][y][x] = 0;
+            }
+          }
+          continue;
+        }
+        if ( ugoita[j] ) {
+          for (int y = 0; y < 15; ++y) {
+            for (int x = 0; x < 15; ++x) {
+              naname2dangerAtom[j][y][x] = 0;
+            }
+          }
+          for (int i = 0; i < 3; ++i) {
+            bool yaba = false;
+            foreach (v; prevActions[i]) {
+              yaba |= 1 <= v && v <= 4;
+            }
+            yabe[i] = yaba;
+            if (info.samuraiInfo[i].hidden == 0 || yaba) {
+              auto me = info.samuraiInfo[i];
+              foreach (x; 0..info.width) {
+                foreach (y; 0..info.height) {
+                  if (3 <= info.field[y][x] && info.field[y][x] < 6 || info.field[y][x] == 9) {
+                    if (Math.abs(x - tegakari[j].x) + Math.abs(y - tegakari[j].y) > (tegakari[j].count == 0 ? 0 : 3 + tegakari[j].count - 1)) {
+                      continue;
+                    }
+                    auto mep = Point(me.curX, me.curY);
+                    auto sip = Point(x, y);
+                    if (info.side == 0 && samuraiDup[j].curX != -1) {
+                      // 殺しに来ている可能性があるのでGameInfo.isSafe(mep, sip, i + 3) == falseもありえる
+                    } else {
+                      if (!GameInfo.isSafe(mep, sip, i + 3)) {
+                        continue;
+                      }
+                    }
+                    bool kiken = false;
+                    enum mimawari = [
+                      [0, 0],
+                      [0, 1],
+                      [0, -1],
+                      [1, 0],
+                      [-1, 0]
+                    ];
+                    foreach (d; mimawari) {
+                      auto nmep = Point(me.curX + d[0], me.curY + d[1]);
+                      if (nmep.x < 0 || info.width <= nmep.x || nmep.y < 0 || info.height <= nmep.y) {
+                        continue;
+                      }
+                      kiken |= !GameInfo.isSafe(nmep, sip, j);
+                    }
+                    if (!kiken) {
+                      continue;
+                    }
+                    enum ofs2 = [
+                      [0, 0],
+                      [0, 1],
+                      [0, -1],
+                      [1, 0],
+                      [-1, 0]
+                    ];
+                    foreach (d2; ofs2) {
+                      int x2 = x + d2[0];
+                      int y2 = y + d2[1];
+                      if (x2 < 0 || 15 <= x2 || y2 < 0 || 15 <= y2) {
+                        continue;
+                      }
+                      for (int r = 0; r < 4; ++r) {
+                        for (int k = 0; k < ox[j - 3].length; ++k) {
+                          auto p = GameInfo.rotate(r, ox[j - 3][k], oy[j - 3][k]);
+                          int nx = x2 + p.x;
+                          int ny = y2 + p.y;
+                          if (nx < 0 || 15 <= nx || ny < 0 || 15 <= ny) {
+                            continue;
+                          }
+                          naname2dangerAtom[j][ny][nx]++;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
     struct Tegakari {
       int x, y;
@@ -883,107 +991,52 @@ class PlayerTarou : Player {
       search(info);
       
       int[][] naname2danger = new int[][](15, 15);
-      bool[3] beActive;
-      bool[3] yabasou;
-      bool[3] yabe;
-      for (int i = 0; i < 3; ++i) {
-        bool yaba = false;
-        foreach (v; prevActions[i]) {
-          yaba |= 1 <= v && v <= 4;
+      for (int i = 3; i < 6; ++i) {
+        for (int y = 0; y < 15; ++y) {
+          for (int x = 0; x < 15; ++x) {
+            naname2danger[y][x] += naname2dangerAtom[i][y][x];
+          }
         }
-        yabe[i] = yaba;
-        enum ofs = [
-          [ [-2, -2], [-2, 2], [2, -2], [2, 2] ],
-          [ [-4, 0], [-3, -1], [-2, -2], [-1, -3], [0, -4], 
-            [ 4, 0], [ 3, -1], [ 2, -2], [ 1, -3],
-                     [-3,  1], [-2,  2], [-1,  3], [0,  4],
-                     [ 3,  1], [ 2,  2], [ 1,  3]           ],
-          [ [-4, 0], [-3, -1], [-2, -2], [-1, -3], [0, -4], 
-            [ 4, 0], [ 3, -1], [ 2, -2], [ 1, -3], [0, -3],
-            [-3, 0], [-3,  1], [-2,  2], [-1,  3], [0,  4],
-            [ 3, 0], [ 3,  1], [ 2,  2], [ 1,  3], [0,  3] ]
-        ];
-        if (info.samuraiInfo[i].hidden == 0 || yaba) {
-          foreach (d; ofs[i]) {
-            int x = info.samuraiInfo[i].curX + d[0];
-            int y = info.samuraiInfo[i].curY + d[1];
-            if (0 <= x && x < 15 && 0 <= y && y < 15
-                && 3 <= info.field[y][x] && info.field[y][x] < 6) {
-              for (int j = 3; j < 6; ++j) {
-                if (info.samuraiInfo[j].curX != -1 || info.samuraiInfo[j].curY != -1) {
-                  continue;
-                }
-                if (probPointDup[i].length) {
-                  continue;
-                }
-                if (Math.abs(x - tegakari[j].x) + Math.abs(y - tegakari[j].y) > (tegakari[j].count == 0 ? 0 : 3 + tegakari[j].count - 1)) {
-                  continue;
-                }
-                enum ox = [
-                  [0, 0, 0, 0],
-                  [0, 0, 1, 1, 2],
-                  [-1, -1, -1, 0, 1, 1, 1]
-                ];
-                enum oy = [
-                  [1, 2, 3, 4],
-                  [1, 2, 0, 1, 0],
-                  [0, -1, 1, 1, 1, -1, 0]
-                ];
-                enum ofs2 = [
-                  [0, 0],
-                  [0, 1],
-                  [0, -1],
-                  [1, 0],
-                  [-1, 0]
-                ];
-                foreach (d2; ofs2) {
-                  int x2 = x + d2[0];
-                  int y2 = y + d2[1];
-                  for (int r = 0; r < 4; ++r) {
-                    for (int k = 0; k < ox[j - 3].length; ++k) {
-                      auto p = GameInfo.rotate(r, ox[j - 3][k], oy[j - 3][k]);
-                      int nx = x2 + p.x;
-                      int ny = y2 + p.y;
-                      if (nx < 0 || 15 <= nx || ny < 0 || 15 <= ny) {
-                        continue;
-                      }
-                      naname2danger[ny][nx]++;
-                    }
-                  }
-                }
+      }
+      bool[3] beActive;
+      bool[3][3] yabasou;
+      for (int i = 0; i < 3; ++i) {
+        auto me = info.samuraiInfo[i];
+        bool yf = false;
+        for (int j = 3; j < 6; ++j) {
+          if (naname2dangerAtom[j][me.curY][me.curX]) {
+            yabasou[i][j - 3] = true;
+            yf |= true;
+          }
+        }
+        if (yf) {
+          if (!yabe[i] && me.hidden == 1) {
+            beActive[i] = true;
+          }
+        }
+      }
+      bool[][][] hora364364 = new bool[][][](6, 15, 15);
+      for (int i = 3; i < 6; ++i) {
+        int max = 1;
+        Point[] maxPoint;
+        foreach (y; 0..info.height) {
+          foreach (x; 0..info.width) {
+            if (info.field[y][x] < 3) {
+              if (naname2dangerAtom[i][y][x] > max) {
+                max = naname2dangerAtom[i][y][x];
+                maxPoint = [Point(x, y)];
+              } else if (naname2dangerAtom[i][y][x] == max) {
+                maxPoint ~= Point(x, y);
               }
             }
           }
         }
-      }
-      for (int i = 0; i < 3; ++i) {
-        if (naname2danger[info.samuraiInfo[i].curY][info.samuraiInfo[i].curX]) {
-          yabasou[i] = true;
-          if (!yabe[i] && info.samuraiInfo[i].hidden == 1) {
-            beActive[i] = true;
-          }
-          /+
-          enum ofs = [
-                                          [0, -3],
-                                [-1, -2], [0, -2], [1, -2],
-                      [-2, -1], [-1, -1], [0, -1], [1, -1], [2, -1],
-            [-3,  0], [-2,  0], [-1,  0], [0,  0], [1,  0], [2,  0], [3, 0],
-                      [-2,  1], [-1,  1], [0,  1], [1,  1], [2,  1],
-                                [-1,  2], [0,  2], [1,  2],
-                                          [0,  3]
-          ];
-          foreach (d; ofs) {
-            int x = info.samuraiInfo[i].curX + d[0];
-            int y = info.samuraiInfo[i].curY + d[1];
-            if (x < 0 || 15 <= x || y < 0 || 15 <= y) {
-              continue;
-            }
-            yabasou[i] &= naname2danger[y][x] > 0;
-          }
-          +/
+        foreach (p; maxPoint) {
+          hora364364[i][p.y][p.x] = true;
         }
       }
-      info.setNaname2Danger(naname2danger);
+      info.setNaname2DangerAtom(naname2dangerAtom);
+      info.set364364 = hora364364;
       info.setYabasou(yabasou);
       info.setBeActive(beActive);
       stderr.writeln("be active : ", beActive);
@@ -1096,6 +1149,45 @@ class PlayerTarou : Player {
         }
       }
       info.setYasyaNoKamae = yasyaNoKamae;
+      
+      bool[][][][] mazui = new bool[][][][](3, 3, 15, 15);
+      for (int i = 0; i < 3; ++i) {
+        for (int y = 0; y < info.height; ++y) {
+          for (int x = 0; x < info.width; ++x) {
+            
+            int v = info.field[y][x];
+            if (3 <= v && v <= 5) {
+              GameInfo jnfo = new GameInfo(info4E);
+              jnfo.samuraiInfo[i].curX = x;
+              jnfo.samuraiInfo[i].curY = y;
+              jnfo.weapon = i;
+              HistoryTree root = new HistoryTree(null, jnfo, 0);
+              next_plan2(root);
+              
+              auto histories = root.collectEnd;
+              
+              for (int j = 0; j < 3; ++j) {
+                foreach (next; histories) {
+                  bool sinu = false;
+                  foreach (panel; next.getInfo.getOccupiedPointsArray) {
+                    auto point = panel.key;
+                    with (info.samuraiInfo[j]) {
+                      sinu |= curX == point.x && curY == point.y;
+                    }
+                  }
+                  if (sinu) {
+                    foreach (panel; next.getInfo.getOccupiedPointsArray) {
+                      auto point = panel.key;
+                      mazui[j][i][point.y][point.x] |= true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      info.setMazui = mazui;
       
       HistoryTree[] histories = HistoryTree[].init;
       
@@ -1237,9 +1329,24 @@ class PlayerTarou : Player {
           bestActions ~= 9;
         }
         +/
-        debug {
+        // debug {
+          stderr.write("   ");
+          for (int x = 0; x < 15; ++x) {
+            stderr.writef("%2d ", x);
+          }
+          stderr.writeln;
           for (int y = 0; y < 15; ++y) {
+            stderr.writef("%2d ", y);
             for (int x = 0; x < 15; ++x) {
+              bool flag = false;
+              for (int i = 3; i < 6; ++i) {
+                flag |= hora364364[i][y][x];
+              }
+              if (flag) {
+                stderr.write("\x1b[7m");
+              } else {
+                stderr.write("\x1b[0m");
+              }
               if (naname2danger[y][x]) {
                 stderr.writef("%2d", naname2danger[y][x]);
               } else {
@@ -1254,7 +1361,9 @@ class PlayerTarou : Player {
             }
             stderr.writeln;
           }
-        }
+          stderr.write("\x1b[0m");
+          stderr.writeln;
+        // }
         for (int y = 0; y < 15; ++y) {
           for (int x = 0; x < 15; ++x) {
             bool flag = false;

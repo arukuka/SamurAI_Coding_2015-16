@@ -81,8 +81,9 @@ class GameInfo {
       
       this.occupiedPointsArray = info.occupiedPointsArray;
       
-      this.naname2danger = info.naname2danger;
+      this.naname2dangerAtom = info.naname2dangerAtom;
       this.yabasou = info.yabasou;
+      this.hora364364 = info.hora364364;
       this.korosisou = info.korosisou;
       this.target = info.target;
       this.reservedTarget = info.reservedTarget;
@@ -100,6 +101,8 @@ class GameInfo {
       this.sokokamo = info.sokokamo;
       this.sokokamoAtom = info.sokokamoAtom;
       this.yattakaCount = info.yattakaCount;
+      
+      this.mazui = info.mazui;
     }
     
     this() {
@@ -596,27 +599,6 @@ class GameInfo {
 
     double safeLevel() const pure nothrow @safe {
       SamuraiInfo me = this.samuraiInfo[this.weapon];
-      if (!beActive[this.weapon]) {
-        if (yabasou[this.weapon]) {
-          if (isAttackContain || me.hidden == 0) {
-            return 0.0;
-          }
-        } else {
-          if (naname2danger[me.curY][me.curX]) {
-            return 0.0;
-          }
-        }
-      }
-      // sine
-      double[bool] init(double kagen) {
-        double[bool] ret;
-        ret[false] = kagen;
-        ret[true] = 1.0;
-        return ret;
-      }
-      enum double[bool] ret  = init = 0.0;
-      enum double[bool] ret2 = init = 0.96;
-      
       bool daijoubu = false;
       if (this.side == 0) {
         bool hajimete = true;
@@ -630,6 +612,76 @@ class GameInfo {
         }
         daijoubu &= yaritin;
       }
+      
+      for (int i = 0; i < 3; ++i) {
+        if (i == this.weapon) {
+          continue;
+        }
+        for (int j = 0; j < 3; ++j) {
+          if (daijoubu && this.samuraiInfo[j + 3].done) {
+            continue;
+          }
+          if (mazui[i][j][me.curY][me.curX]) {
+            return 0.0;
+          }
+        }
+      }
+      
+      
+      if (!beActive[this.weapon]) {
+        bool yf = false;
+        foreach (i; 0..3) {
+          if (daijoubu && this.samuraiInfo[i + 3].done) {
+            continue;
+          }
+          yf |= yabasou[this.weapon][i];
+        }
+        if (yf) {
+          if (isAttackContain || me.hidden == 0) {
+            return 0.0;
+          }
+          bool hf = false;
+          foreach (i; 3..6) {
+            hf |= hora364364[i][me.curY][me.curX];
+          }
+          if (hf) {
+            return 0.0;
+          }
+        } else {
+          for (int i = 3; i < 6; ++i) {
+            if (daijoubu && this.samuraiInfo[i].done) {
+              continue;
+            }
+            if (naname2dangerAtom[i][me.curY][me.curX]) {
+              return 0.0;
+            }
+          }
+        }
+      } else {
+        for (int i = 3; i < 6; ++i) {
+          SamuraiInfo si = this.samuraiInfo[i];
+          immutable Point p = Point(si.curX, si.curY);
+          if (daijoubu && si.done) {
+            continue;
+          }
+          if (naname2dangerAtom[i][me.curY][me.curX]) {
+            return 0.0;
+          }
+          if (hora364364[i][me.curY][me.curX]) {
+            return 0.0;
+          }
+        }
+      }
+      // sine
+      double[bool] init(double kagen) {
+        double[bool] ret;
+        ret[false] = kagen;
+        ret[true] = 1.0;
+        return ret;
+      }
+      enum double[bool] ret  = init = 0.0;
+      enum double[bool] ret2 = init = 0.96;
+
       with (this.samuraiInfo[this.weapon]) {
         for (int i = 0; i < 3; ++i) {
           if (isKilled[i]) {
@@ -645,6 +697,9 @@ class GameInfo {
       for (int i = 3; i < 6; ++i) {
         SamuraiInfo si = this.samuraiInfo[i];
         immutable Point p = Point(si.curX, si.curY);
+        if (daijoubu && si.done) {
+          continue;
+        }
         if (this.target[i - 3]) {
           safe = min(safe, ret2[isSafe(i, p)]);
           continue;
@@ -689,7 +744,6 @@ class GameInfo {
       }
       return safe;
     }
-
 
     double deployLevel() const pure nothrow @safe {
       const SamuraiInfo me = this.samuraiInfo[this.weapon];
@@ -847,10 +901,10 @@ class GameInfo {
     bool haveEnemyIdea(int id) const pure @safe nothrow {
       return samuraiInfo[id].curX == -1 && samuraiInfo[id].curY == -1 && probPlaces[id].length == 0;
     }
-    void setNaname2Danger(int[][] naname2danger) pure @safe nothrow {
-      this.naname2danger = naname2danger;
+    void setNaname2DangerAtom(int[][][] d) pure @safe nothrow {
+      this.naname2dangerAtom = d;
     }
-    void setYabasou(bool[3] yabasou) pure @safe nothrow {
+    void setYabasou(bool[3][3] yabasou) pure @safe nothrow {
       this.yabasou = yabasou;
     }
     void setKorosisou(bool[3] korosisou) pure @safe nothrow {
@@ -860,7 +914,11 @@ class GameInfo {
       auto me = this.samuraiInfo[this.weapon];
       auto p = Point(me.curX, me.curY);
       with (p) {
-        if (naname2danger[y][x] > 0) {
+        int v = 0;
+        for (int i = 3; i < 6; ++i) {
+          v += naname2dangerAtom[i][y][x];
+        }
+        if (v > 0) {
           return 0.0;
         }
         if (isAttackContain || me.hidden == 0) {
@@ -879,7 +937,11 @@ class GameInfo {
           if ( nx < 0 || 15 <= nx || ny < 0 || 15 <= ny ) {
             continue;
           }
-          score += naname2danger[ny][nx];
+          int nv = 0;
+          for (int i = 3; i < 6; ++i) {
+            nv += naname2dangerAtom[i][ny][nx];
+          }
+          score += nv;
         }
         return score;
       }
@@ -1145,6 +1207,12 @@ class GameInfo {
     int getPlayerKill() const pure @safe nothrow {
       return playerKill;
     }
+    void setMazui(bool[][][][] m) pure @safe nothrow {
+      mazui = m;
+    }
+    void set364364(bool[][][] h) pure @safe nothrow {
+      hora364364 = h;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -1161,8 +1229,9 @@ class GameInfo {
     bool[3] isKilled;
     alias Tuple!(Point, "key", int, "val") Panel;
     Panel[] occupiedPointsArray;
-    int[][] naname2danger;
-    bool[3] yabasou;
+    int[][][] naname2dangerAtom;
+    bool[][][] hora364364;
+    bool[3][3] yabasou;
     bool[3] korosisou;
     bool[3] target;
     bool[3] reservedTarget;
@@ -1174,6 +1243,7 @@ class GameInfo {
     int kasanari;
     Point[int] sokokamo;
     Point[int] sokokamoAtom;
+    bool[][][][] mazui;
 
     string[] read() {
       string line = "";
