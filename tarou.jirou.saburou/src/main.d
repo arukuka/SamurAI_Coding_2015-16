@@ -3,6 +3,9 @@ import samurai;
 import std.stdio;
 import std.getopt;
 import core.memory;
+import std.file;
+import std.path;
+import std.process;
 
 void main(string[] args)
 {
@@ -22,7 +25,7 @@ void main(string[] args)
     "combo-1", &combo[1]
   );
   GameInfo info = new GameInfo();
-  PlayerTarou p = new PlayerTarou(info);
+  PlayerTarou player = new PlayerTarou(info);
 
   import std.file;
   if (combo[info.side].exists && combo[info.side].isFile) {
@@ -30,6 +33,15 @@ void main(string[] args)
   } else {
     info.beamStackSearch;
   }
+  
+  auto pyin = pipe();
+  auto pyout = pipe();
+  auto pypath = buildPath(thisExePath.dirName, "kanasinda/main.py");
+  auto pid = spawnProcess(["nice", "-20", "python", pypath],
+                          pyin.readEnd, pyout.writeEnd);
+  
+  pyin.writeEnd.writeln = info.side;
+  pyin.writeEnd.flush();
   
   GC.disable();
   
@@ -42,6 +54,33 @@ void main(string[] args)
     if (info.turn % 6 >= 4) {
       GC.collect();
     }
+    pyin.writeEnd.writeln = info.turn;
+    foreach (s; info.samuraiInfo) {
+      pyin.writeEnd.writefln("%d %d %d %d %d",
+        s.curX,
+        s.curY,
+        s.done.to!int,
+        s.hidden,
+        s.curePeriod
+      );
+    }
+    foreach (y; 0..info.height) {
+      foreach (x; 0..info.width) {
+        if (x) {
+          pyin.writeEnd.write = " ";
+        }
+        pyin.writeEnd.write = info.field[y][x];
+      }
+      pyin.writeEnd.writeln;
+    }
+    pyin.writeEnd.flush();
+    Point[3] predictAtom;
+    foreach (ref po; predictAtom) {
+      auto a = pyout.readEnd.readln.chomp.split.map!(a => a.to!int);
+      po.x = a[0];
+      po.y = a[1];
+    }
+    stderr.writeln = predictAtom;
     bool able = false;
     for (int i = 0; i < 3; ++i) {
       with(info.samuraiInfo[i]) {
@@ -61,11 +100,11 @@ void main(string[] args)
       }
     }
     if (able) {
-      p.play(info);
+      player.play(info);
       0.writeln;
     } else {
-      p.search(info);
-      p.setDup(info);
+      player.search(info);
+      player.setDup(info);
       "0 0".writeln;
     }
     stdout.flush;
