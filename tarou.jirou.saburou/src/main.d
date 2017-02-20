@@ -77,12 +77,35 @@ void main(string[] args)
     }
     pyin.writeEnd.flush();
     Point[3] predictAtom;
-    foreach (ref po; predictAtom) {
+    foreach (ref p; predictAtom) {
       auto a = pyout.readEnd.readln.chomp.split.map!(a => a.to!int);
-      po.x = a[0];
-      po.y = a[1];
+      p.x = a[0];
+      p.y = a[1];
     }
     stderr.writeln("predictAtom : ", predictAtom);
+    Point[int] predict;
+    foreach (i, p; predictAtom) {
+      if (p.x == -1 && p.y == -1) {
+        continue;
+      }
+      with (player.tegakari[i + 3]) {
+        int d = Math.abs(p.x - x) + Math.abs(p.y - y);
+        if (d > (count + 1) * 3 + 1) {
+          continue;
+        }
+      }
+      with (info.samuraiInfo[i + 3]) {
+        if (curX != -1 && curX != -1) {
+          continue;
+        }
+      }
+      int v = info.field[p.y][p.x];
+      if (v < 3 || v == 8) {
+        continue;
+      }
+      predict[cast(int)(i + 3)] = p;
+    }
+    player.setPredict = predict;
     bool able = false;
     for (int i = 0; i < 3; ++i) {
       with(info.samuraiInfo[i]) {

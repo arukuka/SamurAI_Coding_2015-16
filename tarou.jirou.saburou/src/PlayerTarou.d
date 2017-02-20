@@ -26,6 +26,8 @@ class PlayerTarou : Player {
     int skipCount;
     int[][][] naname2dangerAtom = new int[][][](6, 15, 15);
     bool[3] yabe;
+    Point[int] predictAtom;
+    Point[int] predict;
 
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(40)
@@ -395,6 +397,9 @@ class PlayerTarou : Player {
     }
 
   public:
+    void setPredict(Point[int] predict) {
+      this.predictAtom = predict.dup;
+    }
     void setDup(in GameInfo info) pure @safe {
       fieldDup = info.field.map!(a => a.dup).array;
       samuraiDup = info.samuraiInfo.dup;
@@ -777,7 +782,6 @@ class PlayerTarou : Player {
         || (info.turn % 6 == 0 && !samuraiMemory[i].done));
       }
       
-      // TODO:curePeriodを優先
       for (int i = 3; i < 6; ++i) {
         if (info.samuraiInfo[i].curePeriod > 0) {
           samuraiMemory[i].curX = info.samuraiInfo[i].curX = info.samuraiInfo[i].homeX;
@@ -929,6 +933,17 @@ class PlayerTarou : Player {
               }
             }
           }
+        }
+      }
+      
+      foreach (i; 3..6) {
+        if ( !ugoita[i] ) {
+          continue;
+        }
+        if (i in predictAtom) {
+          predict[i] = predictAtom[i];
+        } else {
+          predict.remove(i);
         }
       }
     }
@@ -1352,9 +1367,15 @@ class PlayerTarou : Player {
               } else {
                 stderr.write(" .");
               }
+              bool pred = false;
+              foreach (p; predict) {
+                pred |= p.x == x && p.y == y;
+              }
               if (y == best.samuraiInfo[best.weapon].curY
                   && x == best.samuraiInfo[best.weapon].curX) {
                 stderr.write("*");
+              } else if (pred) {
+                stderr.write("#");
               } else {
                 stderr.write(" ");
               }
