@@ -43,6 +43,8 @@ void main(string[] args)
   pyin.writeEnd.writeln = info.side;
   pyin.writeEnd.flush();
   
+  stderr.writeln = pyout.readEnd.readln.chomp;
+  
   GC.disable();
   
   0.writeln;
@@ -80,7 +82,7 @@ void main(string[] args)
       po.x = a[0];
       po.y = a[1];
     }
-    stderr.writeln = predictAtom;
+    stderr.writeln("predictAtom : ", predictAtom);
     bool able = false;
     for (int i = 0; i < 3; ++i) {
       with(info.samuraiInfo[i]) {
