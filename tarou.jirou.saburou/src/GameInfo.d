@@ -101,8 +101,11 @@ class GameInfo {
       this.sokokamo = info.sokokamo;
       this.sokokamoAtom = info.sokokamoAtom;
       this.yattakaCount = info.yattakaCount;
+      this.yattazeCount = info.yattazeCount;
       
       this.mazui = info.mazui;
+      
+      this.predict = info.predict;
     }
     
     this() {
@@ -140,6 +143,7 @@ class GameInfo {
       this.fightCount = 0;
       this.groupLevel = 0;
       this.yattakaCount = 0;
+      this.yattazeCount = 0;
 
       this.paints = 0;
 
@@ -272,6 +276,7 @@ class GameInfo {
       fightCount = 0;
       isKilled = false;
       yattakaCount = 0;
+      yattazeCount = 0;
       int groupCount = 0;
       int yc = 0;
       int yac = 0;
@@ -368,6 +373,12 @@ class GameInfo {
                   ++yac;
                 }
               }
+              if (j in predict) {
+                auto p = predict[j];
+                if (p.x == nx && p.y == ny) {
+                  ++yattazeCount;
+                }
+              }
             }
           }
         }
@@ -436,6 +447,7 @@ class GameInfo {
           + this.kasanari * m.ksnr
           + this.isYasyaNoKamae() * m.ysnk
           + this.yattakaCount * m.yttk
+          + this.yattazeCount * m.yttz
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -1009,6 +1021,20 @@ class GameInfo {
         Point mep = Point(me.curX, me.curY);
         this.target[i - 3] = !GameInfo.isSafe(mep, sip, this.weapon + 3) && !GameInfo.isSafe(mep, sipa, this.weapon + 3);
       }
+      for (int i = 3; i < 6; ++i) {
+        SamuraiInfo si = this.samuraiInfo[i];
+        if (!si.done) {
+          continue;
+        }
+        if (i !in predict) {
+          continue;
+        }
+        Point sip = predict[i];
+        // in in kill zone
+        SamuraiInfo me = this.samuraiInfo[this.weapon];
+        Point mep = Point(me.curX, me.curY);
+        this.target[i - 3] = !GameInfo.isSafe(mep, sip, this.weapon + 3);
+      }
     }
     void setReservedTarget(bool[3] reservedTarget) pure @safe nothrow {
       this.reservedTarget = reservedTarget;
@@ -1214,6 +1240,9 @@ class GameInfo {
     void set364364(bool[][][] h) pure @safe nothrow {
       hora364364 = h;
     }
+    void setPredict(Point[int] p) pure @safe nothrow {
+      predict = p;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -1221,6 +1250,7 @@ class GameInfo {
     int usurpCount;
     int fightCount;
     int yattakaCount;
+    int yattazeCount;
     double groupLevel;
     int[6] paints;
     Point[][6] probPlaces;
@@ -1245,6 +1275,7 @@ class GameInfo {
     Point[int] sokokamo;
     Point[int] sokokamoAtom;
     bool[][][][] mazui;
+    Point[int] predict;
 
     string[] read() {
       string line = "";

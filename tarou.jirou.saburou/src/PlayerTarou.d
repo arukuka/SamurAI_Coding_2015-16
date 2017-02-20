@@ -47,6 +47,7 @@ class PlayerTarou : Player {
         .setKsnr(-50)
         .setChop(50)
         .setYttk(50000)
+        .setYttz(75000)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -65,6 +66,7 @@ class PlayerTarou : Player {
         .setKsnr(-50)
         .setChop(50)
         .setYttk(50000)
+        .setYttz(75000)
 //        .setLand(20)
 //        .setMvat(22)
         .build();
@@ -85,6 +87,7 @@ class PlayerTarou : Player {
         .setKsnr(-50)
         .setChop(50)
         .setYttk(50000)
+        .setYttz(75000)
 //        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
@@ -946,6 +949,7 @@ class PlayerTarou : Player {
           predict.remove(i);
         }
       }
+      info.setPredict = predict;
     }
     struct Tegakari {
       int x, y;

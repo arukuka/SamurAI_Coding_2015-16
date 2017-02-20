@@ -105,6 +105,7 @@ void main(string[] args)
       }
       predict[cast(int)(i + 3)] = p;
     }
+    stderr.writeln("predict : ", predict);
     player.setPredict = predict;
     bool able = false;
     for (int i = 0; i < 3; ++i) {
