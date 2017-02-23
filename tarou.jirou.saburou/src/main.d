@@ -66,12 +66,16 @@ void main(string[] args)
         s.curePeriod
       );
     }
+    int tukaeru = 0;
     foreach (y; 0..info.height) {
       foreach (x; 0..info.width) {
         if (x) {
           pyin.writeEnd.write = " ";
         }
         pyin.writeEnd.write = info.field[y][x];
+        if (3 <= info.field[y][x] && info.field[y][x] <= 5) {
+          ++tukaeru;
+        }
       }
       pyin.writeEnd.writeln;
     }
@@ -85,6 +89,9 @@ void main(string[] args)
     stderr.writeln("predictAtom : ", predictAtom);
     Point[int] predict;
     foreach (i, p; predictAtom) {
+      if (tukaeru < 6) {
+        continue;
+      }
       if (p.x == -1 && p.y == -1) {
         continue;
       }

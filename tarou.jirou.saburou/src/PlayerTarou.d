@@ -48,6 +48,7 @@ class PlayerTarou : Player {
         .setChop(50)
         .setYttk(50000)
         .setYttz(75000)
+        .setSaki(75000)
 //        .setMvat(22)
         .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
@@ -67,6 +68,7 @@ class PlayerTarou : Player {
         .setChop(50)
         .setYttk(50000)
         .setYttz(75000)
+        .setSaki(75000)
 //        .setLand(20)
 //        .setMvat(22)
         .build();
@@ -88,6 +90,7 @@ class PlayerTarou : Player {
         .setChop(50)
         .setYttk(50000)
         .setYttz(75000)
+        .setSaki(75000)
 //        .setMvat(22)
         .build();
     static const Merits[3] MERITS4WEAPON = [
@@ -866,12 +869,12 @@ class PlayerTarou : Player {
             }
           }
           for (int i = 0; i < 3; ++i) {
-            bool yaba = false;
+            bool yaba = info.samuraiInfo[i].hidden == 0;
             foreach (v; prevActions[i]) {
               yaba |= 1 <= v && v <= 4;
             }
             yabe[i] = yaba;
-            if (info.samuraiInfo[i].hidden == 0 || yaba) {
+            if (yaba) {
               auto me = info.samuraiInfo[i];
               foreach (x; 0..info.width) {
                 foreach (y; 0..info.height) {
@@ -950,6 +953,8 @@ class PlayerTarou : Player {
         }
       }
       info.setPredict = predict;
+      
+      info.setYabanow = yabe;
     }
     struct Tegakari {
       int x, y;
@@ -1105,6 +1110,10 @@ class PlayerTarou : Player {
           if (curX == -1 || curY == -1) {
             if (i + 3 in sokokamo) {
               auto p = sokokamo[i + 3];
+              curX = p.x;
+              curY = p.y;
+            } else if (i + 3 in predict) {
+              auto p = predict[i + 3];
               curX = p.x;
               curY = p.y;
             } else {
@@ -1309,6 +1318,11 @@ class PlayerTarou : Player {
                         + next_max_score
                         - infos[next.getInfo().weapon].score(MERITS4WEAPON[next.getInfo().weapon]);
             nodes[i] = Node(i, v);
+          }
+        }
+        foreach (node; nodes) {
+          if (info.turn == 36) {
+            stderr.writeln("weapon : ", histories[node.index].getInfo.weapon, ", action : ", histories[node.index].getActions, ", score : ", node.score, " ... ", histories[node.index].getInfo.safeLevel);
           }
         }
         double max_score = nodes.map!(a => a.score).reduce!max;

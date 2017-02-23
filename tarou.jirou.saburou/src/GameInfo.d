@@ -106,6 +106,8 @@ class GameInfo {
       this.mazui = info.mazui;
       
       this.predict = info.predict;
+      
+      this.yabanow = info.yabanow;
     }
     
     this() {
@@ -448,6 +450,7 @@ class GameInfo {
           + this.isYasyaNoKamae() * m.ysnk
           + this.yattakaCount * m.yttk
           + this.yattazeCount * m.yttz
+          + this.osakinidouzo * m.saki
           + this.moveAfterAttack * m.mvat;
     }
 
@@ -739,6 +742,19 @@ class GameInfo {
           safe = min(safe, ret[isSafe(i, p)]);
         }
         foreach(pp; this.probPlaces[i]) {
+          if (get(pp.x, pp.y) < 3) {
+            continue;
+          }
+          if (this.side == 1 && !si.done) {
+            immutable Point mep = Point(me.curX, me.curY);
+            safe = min(safe, ret[isSafeW2T(mep, pp, i)
+                || ((!isAttackContain || moveAfterAttack) && me.hidden && isSafeW2A(mep, pp, i))
+                ]);
+          }
+          safe = min(safe, ret[isSafe(i, pp)]);
+        }
+        if (i in predict) {
+          auto pp = predict[i];
           if (get(pp.x, pp.y) < 3) {
             continue;
           }
@@ -1243,6 +1259,19 @@ class GameInfo {
     void setPredict(Point[int] p) pure @safe nothrow {
       predict = p;
     }
+    void setYabanow(bool[3] y) pure @safe nothrow {
+      yabanow = y;
+    }
+    bool osakinidouzo() const pure @safe nothrow {
+      if (!yabanow[this.weapon]) {
+        return false;
+      }
+      bool flag = false;
+      flag |= playerKill > 0;
+      flag |= yattakaCount > 0;
+      flag |= yattazeCount > 0;
+      return flag;
+    }
  private:
     int occupyCount;
     int playerKill;
@@ -1276,6 +1305,7 @@ class GameInfo {
     Point[int] sokokamoAtom;
     bool[][][][] mazui;
     Point[int] predict;
+    bool[3] yabanow;
 
     string[] read() {
       string line = "";
