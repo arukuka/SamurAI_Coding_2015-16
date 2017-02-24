@@ -690,6 +690,7 @@ class PlayerTarou : Player {
         } else {
           probPointDup[i] = probPointDup[i].init;
           info.setProbPlaces(i, probPointDup[i]);
+          predict.remove(i);
           debug {
             stderr.writeln("I see ", i, " : (", si.curX, ", ", si.curY, ")");
           }
