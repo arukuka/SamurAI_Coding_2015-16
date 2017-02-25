@@ -280,8 +280,8 @@ class GameInfo {
       yattakaCount = 0;
       yattazeCount = 0;
       int groupCount = 0;
-      int yc = 0;
-      int yac = 0;
+      bool[3] sokokamoKilled = false;
+      bool[3] sokokamoAtomKilled = false;
 
       isAttackContain |= true;
 
@@ -366,19 +366,20 @@ class GameInfo {
               if (j in sokokamo) {
                 auto p = sokokamo[j];
                 if (p.x == nx && p.y == ny) {
-                  ++yc;
+                  sokokamoKilled[j - 3] |= true;
                 }
               }
               if (j in sokokamoAtom) {
                 auto p = sokokamoAtom[j];
                 if (p.x == nx && p.y == ny) {
-                  ++yac;
+                  sokokamoAtomKilled[j - 3] |= true;
                 }
               }
               if (j in predict) {
                 auto p = predict[j];
                 if (p.x == nx && p.y == ny) {
                   ++yattazeCount;
+                  isKilled[j - 3] |= true;
                 }
               }
             }
@@ -386,7 +387,13 @@ class GameInfo {
         }
       }
 
-      yattakaCount = min(yc, yac);
+      yattakaCount = 0;
+      foreach (i; 0..3) {
+        if (sokokamoKilled[i] && sokokamoAtomKilled[i]) {
+          isKilled[i - 3] |= true;
+          ++yattakaCount;
+        }
+      }
       groupLevel = cast(double) groupCount / size[this.weapon];
       
       this.occupiedPointsArray ~= painted;
