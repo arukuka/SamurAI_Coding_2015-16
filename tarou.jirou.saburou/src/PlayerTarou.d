@@ -450,7 +450,9 @@ class PlayerTarou : Player {
       Point boti;
       bool korosareta = false;
       for (int i = 0; i < 3; ++i) {
-        stderr.writeln("cure: ", info.samuraiInfo[i].curePeriod, " ... ", samuraiDup[i].curX, ", ", samuraiDup[i].curY);
+        debug (check) {
+          stderr.writeln("cure: ", info.samuraiInfo[i].curePeriod, " ... ", samuraiDup[i].curX, ", ", samuraiDup[i].curY);
+        }
         if (info.samuraiInfo[i].curePeriod == 17) {
           // korosareta
           korosareta = true;
@@ -625,7 +627,9 @@ class PlayerTarou : Player {
             }
           }
           arr = arr.sort.uniq.array;
-          stderr.writeln("arr : ", arr);
+          debug (check) {
+            stderr.writeln("arr : ", arr);
+          }
           if (arr.length > 1) {
             for (int j = 1; j <= tegakari[i].count; ++j) {
               int dash = j;
@@ -638,7 +642,9 @@ class PlayerTarou : Player {
                 }
               }
               brr = brr.sort.uniq.array;
-              stderr.writeln(j, " :: brr : ", brr);
+              debug (check) {
+                stderr.writeln(j, " :: brr : ", brr);
+              }
               if (brr.length == 0) {
                 continue;
               } else {
@@ -831,7 +837,7 @@ class PlayerTarou : Player {
         samuraiMemory[i].done = info.samuraiInfo[i].done;
       }
 
-      // debug {
+      debug (check) {
         for (int i = 3; i < 6; ++i) {
           stderr.writeln("(", i, ")");
           stderr.writefln("  %d, %d", info.samuraiInfo[i].curX, info.samuraiInfo[i].curY);
@@ -843,7 +849,7 @@ class PlayerTarou : Player {
             stderr.writefln("\tsokokamo atom: %d, %d", q.x, q.y);
           }
         }
-      // }
+      }
       
       // TODO:よく見直すこと！　要検証！
       for (int j = 3; j < 6; ++j) {
@@ -1064,7 +1070,9 @@ class PlayerTarou : Player {
       info.set364364 = hora364364;
       info.setYabasou(yabasou);
       info.setBeActive(beActive);
-      stderr.writeln("be active : ", beActive);
+      debug (check) {
+        stderr.writeln("be active : ", beActive);
+      }
       bool[3] korosisou = true;
       for (int i = 0; i < 3; ++i) {
         foreach (v; prevActions[i]) {
@@ -1074,9 +1082,11 @@ class PlayerTarou : Player {
       }
       info.setKorosisou(korosisou);
       
-      for (int i = 3; i < 6; ++i) {
-        with (tegakari[i]) {
-          stderr.writefln("(%d) : %d, %d ... %d", i, x, y, count);
+      debug (check) {
+        for (int i = 3; i < 6; ++i) {
+          with (tegakari[i]) {
+            stderr.writefln("(%d) : %d, %d ... %d", i, x, y, count);
+          }
         }
       }
       
@@ -1321,18 +1331,15 @@ class PlayerTarou : Player {
             nodes[i] = Node(i, v);
           }
         }
-        foreach (node; nodes) {
-          if (info.turn == 36) {
-            stderr.writeln("weapon : ", histories[node.index].getInfo.weapon, ", action : ", histories[node.index].getActions, ", score : ", node.score, " ... ", histories[node.index].getInfo.safeLevel);
-          }
-        }
         double max_score = nodes.map!(a => a.score).reduce!max;
         auto bests = nodes.filter!(a => a.score == max_score).array;
         auto idx = bests[uniform(0, bests.length)].index;
         GameInfo best = histories[idx].getInfo();
         auto bestActions = histories[idx].getActions();
         info.comboFlag[best.weapon] &= best.remainCombo();
-        stderr.writeln("夜叉の構えモード: ", best.isYasyaNoKamae);
+        debug (check) {
+          stderr.writeln("夜叉の構えモード: ", best.isYasyaNoKamae);
+        }
         
         int maxSkip = 0;
         int skipID = 0;
@@ -1363,7 +1370,7 @@ class PlayerTarou : Player {
           bestActions ~= 9;
         }
         +/
-        // debug {
+        debug (check) {
           stderr.write("   ");
           for (int x = 0; x < 15; ++x) {
             stderr.writef("%2d ", x);
@@ -1403,36 +1410,38 @@ class PlayerTarou : Player {
           }
           stderr.write("\x1b[0m");
           stderr.writeln;
-        // }
-        for (int y = 0; y < 15; ++y) {
-          for (int x = 0; x < 15; ++x) {
-            bool flag = false;
-            for (int i = 0; i < 3; ++i) {
-              flag |= tugikuruDanger[i][y][x];
+          for (int y = 0; y < 15; ++y) {
+            for (int x = 0; x < 15; ++x) {
+              bool flag = false;
+              for (int i = 0; i < 3; ++i) {
+                flag |= tugikuruDanger[i][y][x];
+              }
+              if (flag) {
+                stderr.write(" x");
+              } else if (tugikuruTokoro[y][x]) {
+                stderr.write(" #");
+              }else {
+                stderr.write(" .");
+              }
+              if (y == best.samuraiInfo[best.weapon].curY
+                  && x == best.samuraiInfo[best.weapon].curX) {
+                stderr.write("*");
+              } else {
+                stderr.write(" ");
+              }
             }
-            if (flag) {
-              stderr.write(" x");
-            } else if (tugikuruTokoro[y][x]) {
-              stderr.write(" #");
-            }else {
-              stderr.write(" .");
-            }
-            if (y == best.samuraiInfo[best.weapon].curY
-                && x == best.samuraiInfo[best.weapon].curX) {
-              stderr.write("*");
-            } else {
-              stderr.write(" ");
-            }
+            stderr.writeln;
           }
-          stderr.writeln;
+          stderr.writefln("score = %f", max_score);
+          stderr.writeln(bestActions);
+          stderr.writeln("combo : ", info.comboFlag);
         }
-        stderr.writefln("score = %f", max_score);
-        stderr.writeln(bestActions);
-        stderr.writeln("combo : ", info.comboFlag);
         
         if (skipFlag) {
           ++skipCount;
-          stderr.writeln("SKIP!!!");
+          debug (check) {
+            stderr.writeln("SKIP!!!");
+          }
           skipID.writeln;
           
           fieldDup = info.field.map!(a => a.dup).array;
