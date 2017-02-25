@@ -390,7 +390,7 @@ class GameInfo {
       yattakaCount = 0;
       foreach (i; 0..3) {
         if (sokokamoKilled[i] && sokokamoAtomKilled[i]) {
-          isKilled[i - 3] |= true;
+          isKilled[i] |= true;
           ++yattakaCount;
         }
       }

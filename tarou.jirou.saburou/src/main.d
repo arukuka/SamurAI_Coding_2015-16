@@ -86,7 +86,9 @@ void main(string[] args)
       p.x = a[0];
       p.y = a[1];
     }
-    stderr.writeln("predictAtom : ", predictAtom);
+    debug (check) {
+      stderr.writeln("predictAtom : ", predictAtom);
+    }
     Point[int] predict;
     foreach (i, p; predictAtom) {
       if (tukaeru < 6) {
@@ -112,7 +114,9 @@ void main(string[] args)
       }
       predict[cast(int)(i + 3)] = p;
     }
-    stderr.writeln("predict : ", predict);
+    debug (check) {
+      stderr.writeln("predict : ", predict);
+    }
     player.setPredict = predict;
     bool able = false;
     for (int i = 0; i < 3; ++i) {
