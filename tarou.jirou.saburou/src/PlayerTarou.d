@@ -28,6 +28,7 @@ class PlayerTarou : Player {
     bool[3] yabe;
     Point[int] predictAtom;
     Point[int] predict;
+    bool planB = false;
 
     static const Merits SPEAR_MERITS = new Merits.MeritsBuilder()
         .setTerr(40)
@@ -51,6 +52,13 @@ class PlayerTarou : Player {
         .setSaki(75000)
 //        .setMvat(22)
         .build();
+    static const Merits SPEAR_MERITS_PLANB = new Merits.MeritsBuilder()
+        .set(SPEAR_MERITS)
+        .setTerr(50)
+        .setUsur(40)
+        .setTrgt(0)
+        .setYsnk(0)
+        .build();
     static const Merits SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(40)
         .setSelf(0)
@@ -71,6 +79,13 @@ class PlayerTarou : Player {
         .setSaki(75000)
 //        .setLand(20)
 //        .setMvat(22)
+        .build();
+    static const Merits SWORD_MERITS_PLANB = new Merits.MeritsBuilder()
+        .set(SWORD_MERITS)
+        .setTerr(50)
+        .setUsur(40)
+        .setTrgt(0)
+        .setYsnk(0)
         .build();
     static const Merits BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(40)
@@ -93,10 +108,22 @@ class PlayerTarou : Player {
         .setSaki(75000)
 //        .setMvat(22)
         .build();
+    static const Merits BATTLEAX_MERITS_PLANB = new Merits.MeritsBuilder()
+        .set(BATTLEAX_MERITS)
+        .setTerr(50)
+        .setUsur(40)
+        .setTrgt(0)
+        .setYsnk(0)
+        .build();
     static const Merits[3] MERITS4WEAPON = [
       SPEAR_MERITS,
       SWORD_MERITS,
       BATTLEAX_MERITS
+    ];
+    static const Merits[3] MERITS4WEAPON_PLANB = [
+      SPEAR_MERITS_PLANB,
+      SWORD_MERITS_PLANB,
+      BATTLEAX_MERITS_PLANB
     ];
 
     static const Merits NEXT_SPEAR_MERITS = new Merits.MeritsBuilder()
@@ -106,11 +133,21 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setGrup(1)
         .build();
+    static const Merits NEXT_SPEAR_MERITS_PLANB = new Merits.MeritsBuilder()
+        .set(NEXT_SPEAR_MERITS)
+        .setTerr(45)
+        .setUsur(36)
+        .build();
     static const Merits NEXT_SWORD_MERITS = new Merits.MeritsBuilder()
         .setTerr(36)
         .setSelf(0)
         .setUsur(45)
         .setMidd(1)
+        .build();
+    static const Merits NEXT_SWORD_MERITS_PLANB = new Merits.MeritsBuilder()
+        .set(NEXT_SWORD_MERITS)
+        .setTerr(45)
+        .setUsur(36)
         .build();
     static const Merits NEXT_BATTLEAX_MERITS = new Merits.MeritsBuilder()
         .setTerr(36)
@@ -119,11 +156,22 @@ class PlayerTarou : Player {
         .setMidd(1)
         .setGrup(1)
         .build();
+    static const Merits NEXT_BATTLEAX_MERITS_PLANB = new Merits.MeritsBuilder()
+        .set(NEXT_BATTLEAX_MERITS)
+        .setTerr(45)
+        .setUsur(36)
+        .build();
     static const Merits[3] NEXT_MERITS4WEAPON = [
       NEXT_SPEAR_MERITS,
       NEXT_SWORD_MERITS,
       NEXT_BATTLEAX_MERITS
     ];
+    static const Merits[3] NEXT_MERITS4WEAPON_PLANB = [
+      NEXT_SPEAR_MERITS_PLANB,
+      NEXT_SWORD_MERITS_PLANB,
+      NEXT_BATTLEAX_MERITS_PLANB
+    ];
+    
     static const Merits LAST_TURN_MERIT = new Merits.MeritsBuilder()
         .setTerr(20)
         .setUsur(40)
@@ -403,6 +451,9 @@ class PlayerTarou : Player {
     }
 
   public:
+    void setPlanB(bool flag) {
+      planB = flag;
+    }
     void setPredict(Point[int] predict) {
       this.predictAtom = predict.dup;
     }
@@ -1314,18 +1365,33 @@ class PlayerTarou : Player {
             next_plan2(next_root);
             auto next_histories = next_root.collectEnd();
             
-            double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon])));
+            auto merit = {
+              if (planB) {
+                return MERITS4WEAPON_PLANB[next.getInfo().weapon];
+              } else {
+                return MERITS4WEAPON[next.getInfo().weapon];
+              }
+            }();
+            auto next_merit = {
+              if (planB) {
+                return NEXT_MERITS4WEAPON_PLANB[next.getInfo().weapon];
+              } else {
+                return NEXT_MERITS4WEAPON[next.getInfo().weapon];
+              }
+            }();
+            
+            double next_max_score = 0.0.reduce!max(next_histories.map!(a => a.getInfo().score(next_merit)));
             
             HistoryTree[3] nuri = preserved;
-            auto best = next_histories.filter!(a => a.getInfo().score(NEXT_MERITS4WEAPON[next.getInfo().weapon]) == next_max_score).front;
+            auto best = next_histories.filter!(a => a.getInfo().score(next_merit) == next_max_score).front;
             nuri[next.getInfo().weapon] = best;
             next.getInfo().miruKasanari(nuri);
             
             next.getInfo().findTarget();
 
-            double v = next.getInfo().score(MERITS4WEAPON[next.getInfo().weapon])
+            double v = next.getInfo().score(merit)
                         + next_max_score
-                        - infos[next.getInfo().weapon].score(MERITS4WEAPON[next.getInfo().weapon]);
+                        - infos[next.getInfo().weapon].score(merit);
             nodes[i] = Node(i, v);
           }
         }

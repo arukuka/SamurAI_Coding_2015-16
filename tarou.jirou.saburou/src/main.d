@@ -50,12 +50,30 @@ void main(string[] args)
   0.writeln;
   stdout.flush;
 
+  int kill = 0;
+  int death = 0;
   while (1) {
     info.readTurnInfo();
     stderr.writefln("# Turn %d", info.turn);
     if (info.turn % 6 >= 4) {
       GC.collect();
     }
+    foreach (i; 0..3) {
+      with(info.samuraiInfo[i]) {
+        if (curePeriod == 17) {
+          death++;
+        }
+      }
+    }
+    foreach (i; 3..6) {
+      with(info.samuraiInfo[i]) {
+        if (curePeriod == 16) {
+          kill++;
+        }
+      }
+    }
+    player.setPlanB(info.side == 1 && kill - death >= 2);
+    stderr.writeln("k/d : ", kill, "/", death);
     pyin.writeEnd.writeln = info.turn;
     foreach (s; info.samuraiInfo) {
       pyin.writeEnd.writefln("%d %d %d %d %d",

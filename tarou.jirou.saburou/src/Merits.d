@@ -70,6 +70,35 @@ immutable class Merits {
           return new Merits(this);
         }
 
+        MeritsBuilder set(in Merits m) {
+          this.self = m.self;
+          this.kill = m.kill;
+          this.hide = m.hide;
+          this.terr = m.terr;
+          this.safe = m.safe;
+          this.usur = m.usur;
+          this.depl = m.depl;
+          this.midd = m.midd;
+          this.fght = m.fght;
+          this.grup = m.grup;
+          this.krnt = m.krnt;
+          this.tchd = m.tchd;
+          this.land = m.land;
+          this.mvat = m.mvat;
+          this.giri = m.giri;
+          this.trgt = m.trgt;
+          this.comb = m.comb;
+          this.muda = m.muda;
+          this.chop = m.chop;
+          this.lskl = m.lskl;
+          this.zako = m.zako;
+          this.ysnk = m.ysnk;
+          this.ksnr = m.ksnr;
+          this.yttk = m.yttk;
+          this.yttz = m.yttz;
+          this.saki = m.saki;
+          return this;
+        }
         MeritsBuilder setMidd(double midd) {
           this.midd = midd;
           return this;
