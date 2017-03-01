@@ -981,13 +981,14 @@ class GameInfo {
         return score;
       }
     }
-    bool existTarget() const pure @safe nothrow {
+    int existTarget() const pure @safe nothrow {
+      int cnt = 0;
       foreach (t; this.target) {
         if (t) {
-          return true;
+          ++cnt;
         }
       }
-      return false;
+      return cnt;
     }
     void findTarget() pure @safe nothrow {
       if (this.side != 0 && (isAttackContain || !this.samuraiInfo[this.weapon].hidden)) {

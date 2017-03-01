@@ -34,7 +34,7 @@ class PlayerTarou : Player {
         .setSelf(0)
         .setKill(100000)
         .setHide(0.5)
-        .setSafe(5000)
+        .setSafe(10000)
         .setUsur(80)
         .setMidd(1)
         .setGrup(5)
@@ -56,7 +56,7 @@ class PlayerTarou : Player {
         .setSelf(0)
         .setKill(100000)
         .setHide(0.5)
-        .setSafe(5000)
+        .setSafe(10000)
         .setUsur(80)
         .setMidd(1)
         .setTrgt(1500)
@@ -77,7 +77,7 @@ class PlayerTarou : Player {
         .setSelf(0)
         .setKill(100000)
         .setHide(0.5)
-        .setSafe(5000)
+        .setSafe(10000)
         .setUsur(80)
         .setMidd(-1)
         .setGrup(5)
@@ -738,11 +738,7 @@ class PlayerTarou : Player {
             bool arieru = true;
             for (int j = 0; j < 3; ++j) {
               auto me = info.samuraiInfo[j];
-              bool yaba = me.hidden == 0;
-              foreach (v; prevActions[j]) {
-                yaba |= 1 <= v && v <= 4;
-              }
-              if (yaba) {
+              if (yabe[j]) {
                 auto mep = Point(me.curX, me.curY);
                 arieru &= GameInfo.isSafe(mep, p, j + 3);
               }
@@ -851,6 +847,13 @@ class PlayerTarou : Player {
         }
       }
       
+      for (int i = 0; i < 3; ++i) {
+        bool yaba = info.samuraiInfo[i].hidden == 0;
+        foreach (v; prevActions[i]) {
+          yaba |= 1 <= v && v <= 4;
+        }
+        yabe[i] = yaba;
+      }
       // TODO:よく見直すこと！　要検証！
       for (int j = 3; j < 6; ++j) {
         if (info.samuraiInfo[j].curX != -1 || info.samuraiInfo[j].curY != -1) {
@@ -876,12 +879,7 @@ class PlayerTarou : Player {
             }
           }
           for (int i = 0; i < 3; ++i) {
-            bool yaba = info.samuraiInfo[i].hidden == 0;
-            foreach (v; prevActions[i]) {
-              yaba |= 1 <= v && v <= 4;
-            }
-            yabe[i] = yaba;
-            if (yaba) {
+            if (yabe[i]) {
               auto me = info.samuraiInfo[i];
               foreach (x; 0..info.width) {
                 foreach (y; 0..info.height) {
@@ -1041,7 +1039,7 @@ class PlayerTarou : Player {
           }
         }
         if (yf) {
-          if (!yabe[i] && me.hidden == 1) {
+          if (!yabe[i]) {
             beActive[i] = true;
           }
         }
